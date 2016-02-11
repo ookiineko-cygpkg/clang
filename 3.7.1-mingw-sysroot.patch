@@ -1,0 +1,71 @@
+--- origsrc/cfe-3.7.1.src/lib/Driver/MinGWToolChain.cpp	2015-08-18 19:06:22.000000000 -0500
++++ src/cfe-3.7.1.src/lib/Driver/MinGWToolChain.cpp	2016-02-10 23:03:53.673956000 -0600
+@@ -69,18 +69,13 @@ MinGW::MinGW(const Driver &D, const llvm
+ // In Windows there aren't any standard install locations, we search
+ // for gcc on the PATH. In Linux the base is always /usr.
+ #ifdef LLVM_ON_WIN32
+-  if (getDriver().SysRoot.size())
+-    Base = getDriver().SysRoot;
+-  else if (llvm::ErrorOr<std::string> GPPName =
++  if (llvm::ErrorOr<std::string> GPPName =
+                llvm::sys::findProgramByName("gcc"))
+     Base = llvm::sys::path::parent_path(
+         llvm::sys::path::parent_path(GPPName.get()));
+   else
+     Base = llvm::sys::path::parent_path(getDriver().getInstalledDir());
+ #else
+-  if (getDriver().SysRoot.size())
+-    Base = getDriver().SysRoot;
+-  else
+     Base = "/usr";
+ #endif
+ 
+@@ -91,8 +86,12 @@ MinGW::MinGW(const Driver &D, const llvm
+   getFilePaths().push_back(GccLibDir);
+   getFilePaths().push_back(
+       (Base + Arch + llvm::sys::path::get_separator() + "lib").str());
+-  getFilePaths().push_back(Base + "lib");
+-  // openSUSE
++  if (getDriver().SysRoot.size())
++    getFilePaths().push_back(getDriver().SysRoot + "/mingw/lib");
++  else
++#ifdef LLVM_ON_WIN32
++    getFilePaths().push_back(Base + "lib");
++#endif
+   getFilePaths().push_back(Base + Arch + "/sys-root/mingw/lib");
+ }
+ 
+@@ -206,14 +205,17 @@ void MinGW::AddClangSystemIncludeArgs(co
+     llvm::sys::path::append(IncludeDir, "include");
+     addSystemInclude(DriverArgs, CC1Args, IncludeDir.c_str());
+     IncludeDir += "-fixed";
+-    // openSUSE
+-    addSystemInclude(DriverArgs, CC1Args,
+-                     Base + Arch + "/sys-root/mingw/include");
+     addSystemInclude(DriverArgs, CC1Args, IncludeDir.c_str());
+   }
+   addSystemInclude(DriverArgs, CC1Args,
+                    Base + Arch + llvm::sys::path::get_separator() + "include");
+-  addSystemInclude(DriverArgs, CC1Args, Base + "include");
++  if (getDriver().SysRoot.size())
++    addSystemInclude(DriverArgs, CC1Args, getDriver().SysRoot + "/mingw/include");
++#ifdef LLVM_ON_WIN32
++  else
++    addSystemInclude(DriverArgs, CC1Args, Base + "include");
++#endif
++  addSystemInclude(DriverArgs, CC1Args, Base + Arch + "/sys-root/mingw/include");
+ }
+ 
+ void MinGW::AddClangCXXStdlibIncludeArgs(const ArgList &DriverArgs,
+@@ -235,7 +237,11 @@ void MinGW::AddClangCXXStdlibIncludeArgs
+     llvm::sys::path::append(CppIncludeBases[0], Arch, "include", "c++");
+     CppIncludeBases.emplace_back(Base);
+     llvm::sys::path::append(CppIncludeBases[1], Arch, "include", "c++", Ver);
++#ifdef LLVM_ON_WIN32
+     CppIncludeBases.emplace_back(Base);
++#else
++    CppIncludeBases.emplace_back(Base + Arch + "/sys-root/mingw/");
++#endif
+     llvm::sys::path::append(CppIncludeBases[2], "include", "c++", Ver);
+     CppIncludeBases.emplace_back(GccLibDir);
+     llvm::sys::path::append(CppIncludeBases[3], "include", "c++");

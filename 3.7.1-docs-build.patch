@@ -1,0 +1,10 @@
+--- origsrc/cfe-3.7.1.src/docs/CMakeLists.txt	2015-08-18 11:50:24.000000000 -0500
++++ src/cfe-3.7.1.src/docs/CMakeLists.txt	2016-02-10 21:00:26.510865800 -0600
+@@ -91,6 +91,7 @@ endif()
+ endif()
+ 
+ if (LLVM_ENABLE_SPHINX)
++  find_package(Sphinx)
+   if (SPHINX_FOUND)
+     include(AddSphinxTarget)
+     if (${SPHINX_OUTPUT_HTML})

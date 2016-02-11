@@ -1,0 +1,47 @@
+--- origsrc/cfe-3.7.1.src/lib/Frontend/InitHeaderSearch.cpp	2015-07-01 23:45:27.000000000 -0500
++++ src/cfe-3.7.1.src/lib/Frontend/InitHeaderSearch.cpp	2016-02-10 16:15:38.928518400 -0600
+@@ -195,11 +195,11 @@ void InitHeaderSearch::AddGnuCPlusPlusIn
+ void InitHeaderSearch::AddMinGWCPlusPlusIncludePaths(StringRef Base,
+                                                      StringRef Arch,
+                                                      StringRef Version) {
+-  AddPath(Base + "/" + Arch + "/" + Version + "/include/c++",
++  AddUnmappedPath(Base + "/" + Arch + "/" + Version + "/include/c++",
+           CXXSystem, false);
+-  AddPath(Base + "/" + Arch + "/" + Version + "/include/c++/" + Arch,
++  AddUnmappedPath(Base + "/" + Arch + "/" + Version + "/include/c++/" + Arch,
+           CXXSystem, false);
+-  AddPath(Base + "/" + Arch + "/" + Version + "/include/c++/backward",
++  AddUnmappedPath(Base + "/" + Arch + "/" + Version + "/include/c++/backward",
+           CXXSystem, false);
+ }
+ 
+@@ -249,7 +249,7 @@ void InitHeaderSearch::AddDefaultCInclud
+     for (SmallVectorImpl<StringRef>::iterator i = dirs.begin();
+          i != dirs.end();
+          ++i)
+-      AddPath(*i, ExternCSystem, false);
++      AddUnmappedPath(*i, ExternCSystem, false);
+     return;
+   }
+ 
+@@ -376,14 +376,13 @@ AddDefaultCPlusPlusIncludePaths(const ll
+   case llvm::Triple::Win32:
+     switch (triple.getEnvironment()) {
+     default: llvm_unreachable("Include management is handled in the driver.");
+-    case llvm::Triple::Cygnus:
+-      // Cygwin-1.7
+-      AddMinGWCPlusPlusIncludePaths("/usr/lib/gcc", "i686-pc-cygwin", "4.7.3");
+-      AddMinGWCPlusPlusIncludePaths("/usr/lib/gcc", "i686-pc-cygwin", "4.5.3");
+-      AddMinGWCPlusPlusIncludePaths("/usr/lib/gcc", "i686-pc-cygwin", "4.3.4");
+-      // g++-4 / Cygwin-1.5
+-      AddMinGWCPlusPlusIncludePaths("/usr/lib/gcc", "i686-pc-cygwin", "4.3.2");
++    case llvm::Triple::Cygnus: {
++      std::string arch = triple.getArch() == llvm::Triple::x86_64 ? "x86_64" : "i686";
++      AddMinGWCPlusPlusIncludePaths("/usr/lib/gcc", arch + "-pc-cygwin", "5.4.0");
++      AddMinGWCPlusPlusIncludePaths("/usr/lib/gcc", arch + "-pc-cygwin", "5.3.0");
++      AddMinGWCPlusPlusIncludePaths("/usr/lib/gcc", arch + "-pc-cygwin", "4.9.3");
+       break;
++      }
+     }
+     break;
+   case llvm::Triple::DragonFly:

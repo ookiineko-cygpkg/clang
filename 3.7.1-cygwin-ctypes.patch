@@ -1,0 +1,18 @@
+--- origsrc/cfe-3.7.1.src/bindings/python/clang/cindex.py	2016-02-11 10:24:42.854643200 -0600
++++ src/cfe-3.7.1.src/bindings/python/clang/cindex.py	2016-02-11 10:27:09.290238200 -0600
+@@ -3544,13 +3544,14 @@ class Config:
+ 
+         import platform
+         name = platform.system()
++        from ctypes.util import find_library
+ 
+         if name == 'Darwin':
+             file = 'libclang.dylib'
+         elif name == 'Windows':
+             file = 'libclang.dll'
+         else:
+-            file = 'libclang.so'
++            file = find_library('clang')
+ 
+         if Config.library_path:
+             file = Config.library_path + '/' + file
