@@ -1,6 +1,6 @@
---- origsrc/cfe-3.7.1.src/lib/Headers/CMakeLists.txt	2015-07-30 17:47:41.000000000 -0500
-+++ src/cfe-3.7.1.src/lib/Headers/CMakeLists.txt	2016-02-10 16:49:05.892870500 -0600
-@@ -69,7 +69,13 @@ set(files
+--- origsrc/cfe-3.8.0.src/lib/Headers/CMakeLists.txt	2015-12-31 08:14:07.000000000 -0600
++++ src/cfe-3.8.0.src/lib/Headers/CMakeLists.txt	2016-06-06 03:45:26.803203200 -0500
+@@ -75,7 +75,13 @@ set(files
    xtestintrin.h
    )
  
@@ -14,9 +14,12 @@
  
  # Generate arm_neon.h
  clang_tablegen(arm_neon.h -gen-arm-neon
-@@ -98,4 +104,4 @@ set_target_properties(clang-headers PROP
- install(
+@@ -105,7 +111,7 @@ install(
    FILES ${files} ${CMAKE_CURRENT_BINARY_DIR}/arm_neon.h
+   COMPONENT clang-headers
    PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
 -  DESTINATION lib${LLVM_LIBDIR_SUFFIX}/clang/${CLANG_VERSION}/include)
 +  DESTINATION ${install_dir})
+ 
+ if (NOT CMAKE_CONFIGURATION_TYPES) # don't add this for IDE's.
+   add_custom_target(install-clang-headers

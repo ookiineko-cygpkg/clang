@@ -1,0 +1,15 @@
+--- origsrc/cfe-3.8.1.src/CMakeLists.txt	2016-01-05 17:51:42.000000000 -0600
++++ src/cfe-3.8.1.src/CMakeLists.txt	2016-07-20 13:40:40.281408900 -0500
+@@ -390,10 +390,11 @@ macro(add_clang_library name)
+       ${ARG_ADDITIONAL_HEADERS} # It may contain unparsed unknown args.
+       )
+   endif()
+-  if(ARG_SHARED)
++  if(ARG_SHARED OR BUILD_SHARED_LIBS)
+     set(ARG_ENABLE_SHARED SHARED)
+   endif()
+   llvm_add_library(${name} ${ARG_ENABLE_SHARED} ${ARG_UNPARSED_ARGUMENTS} ${srcs})
++  set_target_properties(${name} PROPERTIES SOVERSION "${CLANG_VERSION_MAJOR}.${CLANG_VERSION_MINOR}")
+ 
+   if(TARGET ${name})
+     target_link_libraries(${name} ${cmake_2_8_12_INTERFACE} ${LLVM_COMMON_LIBS})

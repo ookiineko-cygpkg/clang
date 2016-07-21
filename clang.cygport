@@ -1,11 +1,10 @@
 # IMPORTANT:
-# This package MUST be rebuilt for each version of gcc, and the
-# cygwin-clang.patch fixed accordingly.
+# The cygwin-includes.patch must be fixed for new versions of gcc.
 
 inherit cmake python python3 emacs vim
 
 NAME="clang"
-VERSION=3.7.1
+VERSION=3.8.1
 RELEASE=1
 CATEGORY="Devel"
 SUMMARY="C/C++ compiler frontend based on LLVM"
@@ -20,24 +19,28 @@ SRC_URI="http://www.llvm.org/releases/${VERSION}/cfe-${VERSION}.src.tar.xz"
 SRC_DIR="cfe-${VERSION}.src"
 PATCH_URI="
 	3.7.1-cygwin-ctypes.patch
-	3.7.1-cygwin-cxa-atexit.patch
-	3.7.1-cygwin-declspec.patch
-	3.7.1-cygwin-includes.patch
-	3.7.1-cygwin64.patch
-	3.7.1-mingw-sjlj.patch
+	3.8.0-cygwin-cxa-atexit.patch
+	3.8.0-cygwin-declspec.patch
+	3.8.0-cygwin-includes.patch
+	3.8.0-linux-includes.patch
+	3.8.0-mingw-sjlj.patch
 	3.7.1-mingw-sysroot.patch
 	3.7.1-docs-build.patch
-	3.7.1-resource-dir.patch
+	3.8.0-lib-soversion.patch
+	3.8.0-resource-dir.patch
 "
 
 PKG_NAMES="clang clang-analyzer clang-doc
 	emacs-clang-format vim-clang-format git-clang-format
-	libclang3.7 libclang-devel python-clang python3-clang
+	libclang3.8 libclang-devel python-clang python3-clang
 	mingw64-i686-clang mingw64-x86_64-clang"
 clang_REQUIRES="gcc-core gcc-g++"
 clang_CONTENTS="
 	--exclude=html
-	usr/bin/clang*
+	usr/bin/clang
+	usr/bin/clang++
+	usr/bin/clang-check.exe
+	usr/bin/clang-format.exe
 	usr/share/doc/clang/
 	usr/share/man/man1/clang*
 "
@@ -45,7 +48,8 @@ clang_analyzer_SUMMARY="C/C++/ObjC code analyzer"
 clang_analyzer_REQUIRES="clang"
 clang_analyzer_CONTENTS="
 	usr/bin/scan-*
-	usr/libexec/clang-analyzer/
+	usr/libexec/c*-analyzer
+	usr/share/scan-*
 	usr/share/man/man1/scan-build.*
 "
 clang_doc_CATEGORY="Doc"
@@ -61,10 +65,11 @@ vim_clang_format_CONTENTS=${VIMFILES#/}
 git_clang_format_SUMMARY="C/C++ code formatting support for Git"
 git_clang_format_REQUIRES="clang git"
 git_clang_format_CONTENTS="usr/bin/git-clang-format"
-libclang3_7_CATEGORY="Libs"
-libclang3_7_SUMMARY="C/C++/ObjC compiler libraries (runtime)"
-libclang3_7_CONTENTS="
-	usr/bin/cygclang*-3.7.dll
+libclang3_8_CATEGORY="Libs"
+libclang3_8_SUMMARY="C/C++/ObjC compiler libraries (runtime)"
+libclang3_8_CONTENTS="
+	usr/bin/clang-3.8.exe
+	usr/bin/cygclang*-3.8.dll
 	usr/lib/clang/${VERSION}/
 "
 libclang_devel_CATEGORY="Libs"
@@ -78,31 +83,33 @@ libclang_devel_CONTENTS="
 "
 python_clang_CATEGORY="Python"
 python_clang_SUMMARY="C/C++/ObjC compiler library (Python bindings)"
-python_clang_REQUIRES="libclang-devel"  # ctypes.util.find_library('clang')
+python_clang_REQUIRES="libclang3.8"	# ctypes
 python_clang_CONTENTS="${PYTHON_SITELIB#/}/clang/"
 python3_clang_CATEGORY="Python"
 python3_clang_SUMMARY="C/C++/ObjC compiler library (Py3K bindings)"
-python3_clang_REQUIRES="libclang-devel"  # ctypes.util.find_library('clang')
+python3_clang_REQUIRES="libclang3.8"	# ctypes
 python3_clang_CONTENTS="${PYTHON3_SITELIB#/}/clang/"
 mingw64_i686_clang_SUMMARY="Clang compiler for Win32 toolchain"
-mingw64_i686_clang_REQUIRES="mingw64-i686-binutils mingw64-i686-gcc-core mingw64-i686-gcc-g++"
+mingw64_i686_clang_REQUIRES="libclang3.8 mingw64-i686-binutils mingw64-i686-gcc-core mingw64-i686-gcc-g++"
 mingw64_i686_clang_CONTENTS="
 	usr/bin/i686-w64-mingw32-clang*
 	usr/share/man/man1/i686-w64-mingw32-clang*
 "
 mingw64_x86_64_clang_SUMMARY="Clang compiler for Win64 toolchain"
-mingw64_x86_64_clang_REQUIRES="mingw64-x86_64-binutils mingw64-x86_64-gcc-core mingw64-x86_64-gcc-g++"
+mingw64_x86_64_clang_REQUIRES="libclang3.8 mingw64-x86_64-binutils mingw64-x86_64-gcc-core mingw64-x86_64-gcc-g++"
 mingw64_x86_64_clang_CONTENTS="
 	usr/bin/x86_64-w64-mingw32-clang*
 	usr/share/man/man1/x86_64-w64-mingw32-clang*
 "
 
+# the executables link against both public (exported in DLL) and
+# private (only in static libs) LLVM APIs
+LDFLAGS+=" -Wl,--allow-multiple-definition"
+
 src_compile() {
 	# leave optimization to build system, fails to dlopen with -O2
 	CFLAGS=${CFLAGS/-O[0-9]/}
 	CXXFLAGS=${CXXFLAGS/-O[0-9]/}
-
-	local gccdir=/usr/lib/gcc/${ARCH}-pc-cygwin/$(${CC} -dumpversion)
 
 	cd ${B}
 	cygcmake \
@@ -114,23 +121,24 @@ src_compile() {
 		-DCLANG_INCLUDE_EXAMPLES=ON -DCLANG_BUILD_EXAMPLES=OFF \
 		-DCLANG_INCLUDE_DOCS=ON -DCLANG_BUILD_DOCS=ON \
 		-DLLVM_ENABLE_SPHINX:BOOL=ON -DLLVM_ENABLE_DOXYGEN:BOOL=OFF \
-		-DC_INCLUDE_DIRS=${gccdir}/include:/usr/include:/usr/include/w32api \
+		-DLLVM_LINK_LLVM_DYLIB:BOOL=ON  \
 		-DGCC_INSTALL_PREFIX=/usr
-
-#		-DCLANG_RESOURCE_DIR=../lib/clang/${ARCH}-pc-cygwin/${VERSION} \
-#		-DDEFAULT_SYSROOT=
 
 	cygmake
 	cygmake docs-clang-html docs-clang-man
 }
 
 src_install() {
+	local tgt
+
 	cd ${B}
 	cyginstall
 
-	doman docs/man/clang.1
-	dosym clang.1 /usr/share/man/man1/clang++.1
 	dodoc docs/html/
+	doman docs/man/clang.1
+
+	dosym $(readlink -f ${D}/usr/bin/clang) /usr/bin/clang++
+	dosym clang.1 /usr/share/man/man1/clang++.1
 
 	pushd ${D}/usr/share/clang
 	doemacs clang-format.el
@@ -139,35 +147,24 @@ src_install() {
 	rm -f clang-format*
 	popd
 
-	dodir /usr/libexec/clang-analyzer
-	for a in scan-build scan-view
-	do
-		cp -r ${S}/tools/$a ${D}/usr/libexec/clang-analyzer/
-		dosym /usr/libexec/clang-analyzer/$a/$a /usr/bin/$a
-	done
-	doman ${S}/tools/scan-build/scan-build.1
-	rm -f ${D}/usr/libexec/clang-analyzer/scan-build/*.1
-	python_optimize /usr/libexec/clang-analyzer
-
-	dodir /usr/libexec/clang-analyzer/scan-build/bin
-	dosym /usr/bin/clang /usr/libexec/clang-analyzer/scan-build/bin/clang
+	python_optimize /usr/share/scan-{build,view}
 
 	pythoninto clang
 	dopython ${S}/bindings/python/clang/*.py
+	sed -i -e "s|\@CLANG_LIB_VERSION\@|${VERSION%.*}|" ${D}${PYTHON_SITELIB}/clang/cindex.py
 	python_optimize
 
 	python3into clang
 	dopython3 ${S}/bindings/python/clang/*.py
+	sed -i -e "s|\@CLANG_LIB_VERSION\@|${VERSION%.*}|" ${D}${PYTHON3_SITELIB}/clang/cindex.py
 	2to3-${PYTHON3_VERSION} -n -w ${D}${PYTHON3_SITELIB}/clang/*.py
 	python3_optimize
 
-	cp $(readlink -f ${D}/usr/bin/clang) ${D}/usr/bin/i686-w64-mingw32-clang.exe
-	dosym i686-w64-mingw32-clang.exe /usr/bin/i686-w64-mingw32-clang++
-	cp ${D}/usr/share/man/man1/{,i686-w64-mingw32-}clang.1
-	dosym i686-w64-mingw32-clang.1 /usr/share/man/man1/i686-w64-mingw32-clang++.1
-
-	cp $(readlink -f ${D}/usr/bin/clang) ${D}/usr/bin/x86_64-w64-mingw32-clang.exe
-	dosym x86_64-w64-mingw32-clang.exe /usr/bin/x86_64-w64-mingw32-clang++
-	cp ${D}/usr/share/man/man1/{,x86_64-w64-mingw32-}clang.1
-	dosym x86_64-w64-mingw32-clang.1 /usr/share/man/man1/x86_64-w64-mingw32-clang++.1
+	for tgt in i686-w64-mingw32 x86_64-w64-mingw32
+	do
+		dosym $(readlink -f ${D}/usr/bin/clang) /usr/bin/${tgt}-clang
+		dosym $(readlink -f ${D}/usr/bin/clang) /usr/bin/${tgt}-clang++
+		cp ${D}/usr/share/man/man1/{,${tgt}-}clang.1
+		dosym ${tgt}-clang.1 /usr/share/man/man1/${tgt}-clang++.1
+	done
 }

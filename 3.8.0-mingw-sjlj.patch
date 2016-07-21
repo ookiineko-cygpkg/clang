@@ -1,0 +1,23 @@
+--- origsrc/cfe-3.8.1.src/lib/Driver/MinGWToolChain.cpp	2016-07-20 18:53:59.002364800 -0500
++++ src/cfe-3.8.1.src/lib/Driver/MinGWToolChain.cpp	2016-07-20 18:57:26.627813400 -0500
+@@ -134,6 +134,10 @@ bool MinGW::UseSEHExceptions() const {
+   return getArch() == llvm::Triple::x86_64;
+ }
+ 
++bool MinGW::UseSjLjExceptions(const ArgList &Args) const {
++  return getArch() == llvm::Triple::x86;
++}
++
+ // Include directories for various hosts:
+ 
+ // Windows, mingw.org
+--- origsrc/cfe-3.8.1.src/lib/Driver/ToolChains.h	2016-07-20 18:53:59.002364800 -0500
++++ src/cfe-3.8.1.src/lib/Driver/ToolChains.h	2016-07-20 18:56:02.835304100 -0500
+@@ -644,6 +644,7 @@ public:
+   bool isPIEDefault() const override;
+   bool isPICDefaultForced() const override;
+   bool UseSEHExceptions() const;
++  bool UseSjLjExceptions(const llvm::opt::ArgList &Args) const override;
+ 
+   void
+   AddClangSystemIncludeArgs(const llvm::opt::ArgList &DriverArgs,

@@ -1,0 +1,11 @@
+--- origsrc/cfe-3.8.0.src/lib/Driver/Tools.cpp	2016-02-12 16:51:41.000000000 -0600
++++ src/cfe-3.8.0.src/lib/Driver/Tools.cpp	2016-06-06 03:36:37.152472300 -0500
+@@ -4965,7 +4965,7 @@ void Clang::ConstructJob(Compilation &C,
+   // -fuse-cxa-atexit is default.
+   if (!Args.hasFlag(
+           options::OPT_fuse_cxa_atexit, options::OPT_fno_use_cxa_atexit,
+-          !IsWindowsCygnus && !IsWindowsGNU &&
++          !IsWindowsGNU &&
+               getToolChain().getTriple().getOS() != llvm::Triple::Solaris &&
+               getToolChain().getArch() != llvm::Triple::hexagon &&
+               getToolChain().getArch() != llvm::Triple::xcore &&
