@@ -1,6 +1,6 @@
---- origsrc/cfe-3.8.1.src/CMakeLists.txt	2016-01-05 17:51:42.000000000 -0600
-+++ src/cfe-3.8.1.src/CMakeLists.txt	2016-07-20 13:40:40.281408900 -0500
-@@ -390,10 +390,11 @@ macro(add_clang_library name)
+--- origsrc/cfe-3.9.1.src/cmake/modules/AddClang.cmake	2016-07-09 20:44:00.000000000 -0500
++++ src/cfe-3.9.1.src/cmake/modules/AddClang.cmake	2017-02-20 14:01:46.788434800 -0600
+@@ -80,10 +80,11 @@ macro(add_clang_library name)
        ${ARG_ADDITIONAL_HEADERS} # It may contain unparsed unknown args.
        )
    endif()
@@ -12,4 +12,4 @@
 +  set_target_properties(${name} PROPERTIES SOVERSION "${CLANG_VERSION_MAJOR}.${CLANG_VERSION_MINOR}")
  
    if(TARGET ${name})
-     target_link_libraries(${name} ${cmake_2_8_12_INTERFACE} ${LLVM_COMMON_LIBS})
+     target_link_libraries(${name} INTERFACE ${LLVM_COMMON_LIBS})

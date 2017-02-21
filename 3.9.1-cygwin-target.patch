@@ -1,0 +1,20 @@
+--- origsrc/cfe-3.9.1.src/lib/Basic/Targets.cpp	2016-11-29 09:53:17.000000000 -0600
++++ src/cfe-3.9.1.src/lib/Basic/Targets.cpp	2017-02-20 14:04:35.399069400 -0600
+@@ -4501,7 +4501,6 @@ class CygwinX86_64TargetInfo : public X8
+ public:
+   CygwinX86_64TargetInfo(const llvm::Triple &Triple, const TargetOptions &Opts)
+       : X86_64TargetInfo(Triple, Opts) {
+-    TLSSupported = false;
+     WCharType = UnsignedShort;
+   }
+   void getTargetDefines(const LangOptions &Opts,
+@@ -4519,6 +4518,9 @@ public:
+     if (!Opts.SjLjExceptions)
+       Builder.defineMacro("__SEH__");
+   }
++  BuiltinVaListKind getBuiltinVaListKind() const override {
++    return TargetInfo::CharPtrBuiltinVaList;
++  }
+ };
+ 
+ class DarwinX86_64TargetInfo : public DarwinTargetInfo<X86_64TargetInfo> {
