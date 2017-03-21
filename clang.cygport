@@ -1,7 +1,7 @@
 # IMPORTANT:
 # The cygwin-includes.patch must be fixed for new versions of gcc.
 
-inherit cmake python python3 emacs vim
+inherit cmake python2 emacs vim
 
 NAME="clang"
 VERSION=3.9.1
@@ -18,7 +18,6 @@ HOMEPAGE="http://clang.llvm.org/"
 SRC_URI="http://www.llvm.org/releases/${VERSION}/cfe-${VERSION}.src.tar.xz"
 SRC_DIR="cfe-${VERSION}.src"
 PATCH_URI="
-	3.7.1-cygwin-ctypes.patch
 	3.8.0-cygwin-cxa-atexit.patch
 	3.9.1-cygwin-target.patch
 	3.8.0-cygwin-includes.patch
@@ -32,7 +31,7 @@ PATCH_URI="
 
 PKG_NAMES="clang clang-analyzer clang-doc
 	emacs-clang-format vim-clang-format git-clang-format
-	libclang3.9 libclang-devel python-clang python3-clang
+	libclang3.9 libclang-devel
 	mingw64-i686-clang mingw64-x86_64-clang"
 clang_REQUIRES="gcc-core gcc-g++"
 clang_CONTENTS="
@@ -81,14 +80,6 @@ libclang_devel_CONTENTS="
 	usr/lib/cmake/clang/
 	usr/lib/libclang*.dll.a
 "
-python_clang_CATEGORY="Python"
-python_clang_SUMMARY="C/C++/ObjC compiler library (Python bindings)"
-python_clang_REQUIRES="libclang3.9"	# ctypes
-python_clang_CONTENTS="${PYTHON_SITELIB#/}/clang/"
-python3_clang_CATEGORY="Python"
-python3_clang_SUMMARY="C/C++/ObjC compiler library (Py3K bindings)"
-python3_clang_REQUIRES="libclang3.9"	# ctypes
-python3_clang_CONTENTS="${PYTHON3_SITELIB#/}/clang/"
 mingw64_i686_clang_SUMMARY="Clang compiler for Win32 toolchain"
 mingw64_i686_clang_REQUIRES="libclang3.9 mingw64-i686-binutils mingw64-i686-gcc-core mingw64-i686-gcc-g++"
 mingw64_i686_clang_CONTENTS="
@@ -148,18 +139,7 @@ src_install() {
 	rm -f clang-format*
 	popd
 
-	python_optimize /usr/share/scan-{build,view}
-
-	pythoninto clang
-	dopython ${S}/bindings/python/clang/*.py
-	sed -i -e "s|\@CLANG_LIB_VERSION\@|${VERSION%.*}|" ${D}${PYTHON_SITELIB}/clang/cindex.py
-	python_optimize
-
-	python3into clang
-	dopython3 ${S}/bindings/python/clang/*.py
-	sed -i -e "s|\@CLANG_LIB_VERSION\@|${VERSION%.*}|" ${D}${PYTHON3_SITELIB}/clang/cindex.py
-	2to3-${PYTHON3_VERSION} -n -w ${D}${PYTHON3_SITELIB}/clang/*.py
-	python3_optimize
+	python2_optimize /usr/share/scan-{build,view}
 
 	for tgt in i686-w64-mingw32 x86_64-w64-mingw32
 	do
