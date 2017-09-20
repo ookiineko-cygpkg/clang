@@ -55,10 +55,10 @@
 -      AddMinGWCPlusPlusIncludePaths("/usr/lib/gcc", "i686-pc-cygwin", "4.3.2");
 +    case llvm::Triple::Cygnus: {
 +      std::string arch = triple.getArch() == llvm::Triple::x86_64 ? "x86_64" : "i686";
-+      AddMinGWCPlusPlusIncludePaths("/usr/lib/gcc", arch + "-pc-cygwin", "7.1.0");
++      AddMinGWCPlusPlusIncludePaths("/usr/lib/gcc", arch + "-pc-cygwin", "7.4.0");
++      AddMinGWCPlusPlusIncludePaths("/usr/lib/gcc", arch + "-pc-cygwin", "7.3.0");
++      AddMinGWCPlusPlusIncludePaths("/usr/lib/gcc", arch + "-pc-cygwin", "7.2.0");
 +      AddMinGWCPlusPlusIncludePaths("/usr/lib/gcc", arch + "-pc-cygwin", "6.4.0");
-+      AddMinGWCPlusPlusIncludePaths("/usr/lib/gcc", arch + "-pc-cygwin", "6.3.0");
-+      AddMinGWCPlusPlusIncludePaths("/usr/lib/gcc", arch + "-pc-cygwin", "5.4.0");
        break;
 +      }
      }
