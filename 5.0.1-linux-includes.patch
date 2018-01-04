@@ -1,25 +1,25 @@
---- origsrc/cfe-3.8.1.src/lib/Driver/ToolChains.cpp	2016-02-16 13:56:48.000000000 -0600
-+++ src/cfe-3.8.1.src/lib/Driver/ToolChains.cpp	2016-07-20 18:33:39.986370400 -0500
-@@ -3831,7 +3831,7 @@ std::string Linux::computeSysRoot() cons
+--- origsrc/cfe-5.0.1.src/lib/Driver/ToolChains/Linux.cpp	2017-06-03 11:47:06.000000000 -0500
++++ src/cfe-5.0.1.src/lib/Driver/ToolChains/Linux.cpp	2017-12-31 18:23:40.241910600 -0600
+@@ -384,7 +384,7 @@ std::string Linux::computeSysRoot() cons
    if (!getDriver().SysRoot.empty())
      return getDriver().SysRoot;
  
--  if (!GCCInstallation.isValid() || !isMipsArch(getTriple().getArch()))
+-  if (!GCCInstallation.isValid() || !tools::isMipsArch(getTriple().getArch()))
 +  if (!GCCInstallation.isValid())
      return std::string();
  
    // Standalone MIPS toolchains use different names for sysroot folder
-@@ -3842,6 +3842,9 @@ std::string Linux::computeSysRoot() cons
+@@ -395,6 +395,9 @@ std::string Linux::computeSysRoot() cons
    const StringRef TripleStr = GCCInstallation.getTriple().str();
    const Multilib &Multilib = GCCInstallation.getMultilib();
  
-+  if (!isMipsArch(getTriple().getArch()))
++  if(!tools::isMipsArch(getTriple().getArch()))
 +    return std::string("/usr/" + TripleStr.str() + "/sys-root");
 +
    std::string Path =
        (InstallDir + "/../../../../" + TripleStr + "/libc" + Multilib.osSuffix())
            .str();
-@@ -4106,6 +4109,7 @@ void Linux::AddClangCXXStdlibIncludeArgs
+@@ -779,6 +782,7 @@ void Linux::addLibStdCxxIncludePaths(con
        InstallDir.str() + "/include/g++-v" + Version.MajorStr + "." +
            Version.MinorStr,
        InstallDir.str() + "/include/g++-v" + Version.MajorStr,

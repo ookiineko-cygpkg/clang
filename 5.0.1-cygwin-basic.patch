@@ -1,0 +1,41 @@
+--- origsrc/cfe-5.0.1.src/lib/Basic/Targets.cpp	2017-11-27 08:54:45.000000000 -0600
++++ src/cfe-5.0.1.src/lib/Basic/Targets.cpp	2018-01-01 06:38:31.964912200 -0600
+@@ -4743,6 +4743,7 @@ public:
+     WCharType = UnsignedShort;
+     DoubleAlign = LongLongAlign = 64;
+     resetDataLayout("e-m:x-p:32:32-i64:64-f80:32-n8:16:32-a:0:32-S32");
++    HasFloat128 = true;
+   }
+   void getTargetDefines(const LangOptions &Opts,
+                         MacroBuilder &Builder) const override {
+@@ -5039,8 +5040,8 @@ class CygwinX86_64TargetInfo : public X8
+ public:
+   CygwinX86_64TargetInfo(const llvm::Triple &Triple, const TargetOptions &Opts)
+       : X86_64TargetInfo(Triple, Opts) {
+-    TLSSupported = false;
+     WCharType = UnsignedShort;
++    HasFloat128 = true;
+   }
+   void getTargetDefines(const LangOptions &Opts,
+                         MacroBuilder &Builder) const override {
+@@ -5057,6 +5058,9 @@ public:
+     if (!Opts.SjLjExceptions)
+       Builder.defineMacro("__SEH__");
+   }
++  BuiltinVaListKind getBuiltinVaListKind() const override {
++    return TargetInfo::CharPtrBuiltinVaList;
++  }
+ };
+ 
+ class DarwinX86_64TargetInfo : public DarwinTargetInfo<X86_64TargetInfo> {
+--- origsrc/cfe-5.0.1.src/lib/Driver/ToolChains/Clang.cpp	2017-11-15 16:41:48.000000000 -0600
++++ src/cfe-5.0.1.src/lib/Driver/ToolChains/Clang.cpp	2017-12-31 18:15:07.718650900 -0600
+@@ -3696,7 +3696,7 @@ void Clang::ConstructJob(Compilation &C,
+   // -fuse-cxa-atexit is default.
+   if (!Args.hasFlag(
+           options::OPT_fuse_cxa_atexit, options::OPT_fno_use_cxa_atexit,
+-          !IsWindowsCygnus && !IsWindowsGNU &&
++          !IsWindowsGNU &&
+               getToolChain().getTriple().getOS() != llvm::Triple::Solaris &&
+               getToolChain().getArch() != llvm::Triple::hexagon &&
+               getToolChain().getArch() != llvm::Triple::xcore &&

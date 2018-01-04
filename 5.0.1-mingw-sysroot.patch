@@ -1,26 +1,17 @@
---- origsrc/cfe-3.7.1.src/lib/Driver/MinGWToolChain.cpp	2015-08-18 19:06:22.000000000 -0500
-+++ src/cfe-3.7.1.src/lib/Driver/MinGWToolChain.cpp	2016-02-10 23:03:53.673956000 -0600
-@@ -69,18 +69,13 @@ MinGW::MinGW(const Driver &D, const llvm
- // In Windows there aren't any standard install locations, we search
- // for gcc on the PATH. In Linux the base is always /usr.
- #ifdef LLVM_ON_WIN32
+--- origsrc/cfe-5.0.1.src/lib/Driver/ToolChains/MinGW.cpp	2017-08-10 20:47:32.000000000 -0500
++++ src/cfe-5.0.1.src/lib/Driver/ToolChains/MinGW.cpp	2017-12-31 18:18:34.610637300 -0600
+@@ -302,9 +302,7 @@ toolchains::MinGW::MinGW(const Driver &D
+     : ToolChain(D, Triple, Args), CudaInstallation(D, Triple, Args) {
+   getProgramPaths().push_back(getDriver().getInstalledDir());
+ 
 -  if (getDriver().SysRoot.size())
 -    Base = getDriver().SysRoot;
--  else if (llvm::ErrorOr<std::string> GPPName =
-+  if (llvm::ErrorOr<std::string> GPPName =
-                llvm::sys::findProgramByName("gcc"))
+-  else if (llvm::ErrorOr<std::string> GPPName = findGcc())
++  if (llvm::ErrorOr<std::string> GPPName = findGcc())
      Base = llvm::sys::path::parent_path(
          llvm::sys::path::parent_path(GPPName.get()));
    else
-     Base = llvm::sys::path::parent_path(getDriver().getInstalledDir());
- #else
--  if (getDriver().SysRoot.size())
--    Base = getDriver().SysRoot;
--  else
-     Base = "/usr";
- #endif
- 
-@@ -91,8 +86,12 @@ MinGW::MinGW(const Driver &D, const llvm
+@@ -317,8 +315,12 @@ toolchains::MinGW::MinGW(const Driver &D
    getFilePaths().push_back(GccLibDir);
    getFilePaths().push_back(
        (Base + Arch + llvm::sys::path::get_separator() + "lib").str());
@@ -35,15 +26,8 @@
    getFilePaths().push_back(Base + Arch + "/sys-root/mingw/lib");
  }
  
-@@ -206,14 +205,17 @@ void MinGW::AddClangSystemIncludeArgs(co
-     llvm::sys::path::append(IncludeDir, "include");
-     addSystemInclude(DriverArgs, CC1Args, IncludeDir.c_str());
-     IncludeDir += "-fixed";
--    // openSUSE
--    addSystemInclude(DriverArgs, CC1Args,
--                     Base + Arch + "/sys-root/mingw/include");
-     addSystemInclude(DriverArgs, CC1Args, IncludeDir.c_str());
-   }
+@@ -436,7 +442,12 @@ void toolchains::MinGW::AddClangSystemIn
+ 
    addSystemInclude(DriverArgs, CC1Args,
                     Base + Arch + llvm::sys::path::get_separator() + "include");
 -  addSystemInclude(DriverArgs, CC1Args, Base + "include");
@@ -53,11 +37,10 @@
 +  else
 +    addSystemInclude(DriverArgs, CC1Args, Base + "include");
 +#endif
-+  addSystemInclude(DriverArgs, CC1Args, Base + Arch + "/sys-root/mingw/include");
  }
  
- void MinGW::AddClangCXXStdlibIncludeArgs(const ArgList &DriverArgs,
-@@ -235,7 +237,11 @@ void MinGW::AddClangCXXStdlibIncludeArgs
+ void toolchains::MinGW::AddClangCXXStdlibIncludeArgs(
+@@ -458,7 +469,11 @@ void toolchains::MinGW::AddClangCXXStdli
      llvm::sys::path::append(CppIncludeBases[0], Arch, "include", "c++");
      CppIncludeBases.emplace_back(Base);
      llvm::sys::path::append(CppIncludeBases[1], Arch, "include", "c++", Ver);
