@@ -107,13 +107,11 @@
 +                                     ArgStringList &CmdArgs) const {
 +  // Make use of compiler-rt if --rtlib option is used
 +  ToolChain::RuntimeLibType RLT = getToolChain().GetRuntimeLibType(Args);
-+  if (RLT == ToolChain::RLT_Libgcc) {
-+    bool Static = Args.hasArg(options::OPT_static_libgcc) ||
-+                  Args.hasArg(options::OPT_static);
-+    bool Shared = Args.hasArg(options::OPT_shared);
-+    bool CXX = getToolChain().getDriver().CCCIsCXX();
++  bool Static = Args.hasArg(options::OPT_static_libgcc) ||
++                Args.hasArg(options::OPT_static);
 +
-+    if (Static || (!CXX && !Shared)) {
++  if (RLT == ToolChain::RLT_Libgcc) {
++    if (Static) {
 +      CmdArgs.push_back("-lgcc");
 +      CmdArgs.push_back("-lgcc_eh");
 +    } else {
@@ -122,6 +120,10 @@
 +    }
 +  } else {
 +    AddRunTimeLibs(getToolChain(), getToolChain().getDriver(), CmdArgs, Args);
++    if (Static)
++      CmdArgs.push_back("-lgcc_eh");
++    else
++      CmdArgs.push_back("-lgcc_s");
 +  }
 +
 +  CmdArgs.push_back("-lcygwin");
@@ -500,10 +502,8 @@
 +                                    ArgStringList &CmdArgs) const {
 +  switch (GetCXXStdlibType(Args)) {
 +  case ToolChain::CST_Libcxx:
-+    CmdArgs.push_back("--start-group");
 +    CmdArgs.push_back("-lc++");
 +    CmdArgs.push_back("-lc++abi");
-+    CmdArgs.push_back("--end-group");
 +    CmdArgs.push_back("-lcatgets");
 +    break;
 +  case ToolChain::CST_Libstdcxx:

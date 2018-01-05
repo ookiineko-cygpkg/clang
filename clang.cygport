@@ -95,6 +95,9 @@ mingw64_x86_64_clang_CONTENTS="
 	usr/share/man/man1/x86_64-w64-mingw32-clang*
 "
 
+# created by patches
+DISTCLEANFILES="lib/Driver/ToolChains/Cygwin.*"
+
 # the executables link against both public (exported in DLL) and
 # private (only in static libs) LLVM APIs
 LDFLAGS+=" -Wl,--allow-multiple-definition"
