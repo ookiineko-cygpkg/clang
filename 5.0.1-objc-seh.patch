@@ -1,0 +1,45 @@
+--- origsrc/cfe-5.0.1.src/lib/CodeGen/CGCleanup.h	2017-01-08 16:58:07.000000000 -0600
++++ src/cfe-5.0.1.src/lib/CodeGen/CGCleanup.h	2018-01-04 13:07:40.799594300 -0600
+@@ -619,7 +619,9 @@ struct EHPersonality {
+   static const EHPersonality GNU_ObjC_SJLJ;
+   static const EHPersonality GNU_ObjC_SEH;
+   static const EHPersonality GNUstep_ObjC;
++  static const EHPersonality GNUstep_ObjC_SEH;
+   static const EHPersonality GNU_ObjCXX;
++  static const EHPersonality GNU_ObjCXX_SEH;
+   static const EHPersonality NeXT_ObjC;
+   static const EHPersonality GNU_CPlusPlus;
+   static const EHPersonality GNU_CPlusPlus_SJLJ;
+--- origsrc/cfe-5.0.1.src/lib/CodeGen/CGException.cpp	2017-06-09 08:40:18.000000000 -0500
++++ src/cfe-5.0.1.src/lib/CodeGen/CGException.cpp	2018-01-04 06:26:32.570882700 -0600
+@@ -103,8 +103,12 @@ EHPersonality::GNU_ObjC_SEH = {"__gnu_ob
+ const EHPersonality
+ EHPersonality::GNU_ObjCXX = { "__gnustep_objcxx_personality_v0", nullptr };
+ const EHPersonality
++EHPersonality::GNU_ObjCXX_SEH = { "__gnustep_objcxx_personality_seh0", nullptr };
++const EHPersonality
+ EHPersonality::GNUstep_ObjC = { "__gnustep_objc_personality_v0", nullptr };
+ const EHPersonality
++EHPersonality::GNUstep_ObjC_SEH = { "__gnustep_objc_personality_seh0", nullptr };
++const EHPersonality
+ EHPersonality::MSVC_except_handler = { "_except_handler3", nullptr };
+ const EHPersonality
+ EHPersonality::MSVC_C_specific_handler = { "__C_specific_handler", nullptr };
+@@ -137,6 +141,8 @@ static const EHPersonality &getObjCPerso
+     return EHPersonality::NeXT_ObjC;
+   case ObjCRuntime::GNUstep:
+     if (L.ObjCRuntime.getVersion() >= VersionTuple(1, 7))
++      if (useLibGCCSEHPersonality(T))
++        return EHPersonality::GNUstep_ObjC_SEH;
+       return EHPersonality::GNUstep_ObjC;
+     // fallthrough
+   case ObjCRuntime::GCC:
+@@ -183,6 +189,8 @@ static const EHPersonality &getObjCXXPer
+   case ObjCRuntime::ObjFW:
+     return getObjCPersonality(T, L);
+   case ObjCRuntime::GNUstep:
++    if (useLibGCCSEHPersonality(T))
++      return EHPersonality::GNU_ObjCXX_SEH;
+     return EHPersonality::GNU_ObjCXX;
+   }
+   llvm_unreachable("bad runtime kind");

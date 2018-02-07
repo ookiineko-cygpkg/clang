@@ -2,7 +2,7 @@ inherit cmake python2 emacs vim
 
 NAME="clang"
 VERSION=5.0.1
-RELEASE=1
+RELEASE=2
 CATEGORY="Devel"
 SUMMARY="C/C++ compiler frontend based on LLVM"
 DESCRIPTION="Clang is an LLVM native C/C++/ObjC compiler, which aims to deliver
@@ -19,9 +19,12 @@ PATCH_URI="
 	5.0.1-cygwin-basic.patch
 	5.0.1-cygwin-driver.patch
 	5.0.1-linux-includes.patch
+	5.0.1-mingw-stdcxxlibs.patch
 	5.0.1-mingw-sjlj.patch
 	5.0.1-mingw-sysroot.patch
 	3.9.1-lib-soversion.patch
+	5.0.1-newlib-ftm.patch
+	5.0.1-objc-seh.patch
 "
 
 PKG_NAMES="clang clang-analyzer clang-doc

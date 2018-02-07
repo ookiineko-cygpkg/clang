@@ -1,0 +1,32 @@
+--- origsrc/cfe-5.0.1.src/lib/Driver/ToolChains/MinGW.cpp	2018-01-04 13:09:15.259246100 -0600
++++ src/cfe-5.0.1.src/lib/Driver/ToolChains/MinGW.cpp	2018-01-10 23:29:41.833302000 -0600
+@@ -486,3 +486,18 @@ void toolchains::MinGW::AddClangCXXStdli
+     break;
+   }
+ }
++
++void toolchains::MinGW::AddCXXStdlibLibArgs(const ArgList &Args,
++                                    ArgStringList &CmdArgs) const {
++  switch (GetCXXStdlibType(Args)) {
++  case ToolChain::CST_Libcxx:
++    CmdArgs.push_back("-lc++");
++    CmdArgs.push_back("-lc++abi");
++    break;
++  case ToolChain::CST_Libstdcxx:
++    CmdArgs.push_back("-lstdc++");
++    if (Args.hasArg(options::OPT_static))
++      CmdArgs.push_back("-lpthread");
++    break;
++  }
++}
+--- origsrc/cfe-5.0.1.src/lib/Driver/ToolChains/MinGW.h	2018-01-01 14:01:29.808767300 -0600
++++ src/cfe-5.0.1.src/lib/Driver/ToolChains/MinGW.h	2018-01-10 23:28:03.276829600 -0600
+@@ -73,6 +73,8 @@ public:
+   void AddClangCXXStdlibIncludeArgs(
+       const llvm::opt::ArgList &DriverArgs,
+       llvm::opt::ArgStringList &CC1Args) const override;
++  void AddCXXStdlibLibArgs(const llvm::opt::ArgList &Args,
++                           llvm::opt::ArgStringList &CmdArgs) const override;
+ 
+   void AddCudaIncludeArgs(const llvm::opt::ArgList &DriverArgs,
+                           llvm::opt::ArgStringList &CC1Args) const override;

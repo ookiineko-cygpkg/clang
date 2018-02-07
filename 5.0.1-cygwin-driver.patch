@@ -45,7 +45,7 @@
    Args.AddLastArg(CmdArgs, options::OPT_fheinous_gnu_extensions);
 --- origsrc/cfe-5.0.1.src/lib/Driver/ToolChains/Cygwin.cpp	1969-12-31 18:00:00.000000000 -0600
 +++ src/cfe-5.0.1.src/lib/Driver/ToolChains/Cygwin.cpp	2018-01-01 01:00:10.942028300 -0600
-@@ -0,0 +1,466 @@
+@@ -0,0 +1,459 @@
 +//===--- Cygwin.cpp - CygwinToolChain Implementation ------------------------===//
 +//
 +//                     The LLVM Compiler Infrastructure
@@ -274,12 +274,6 @@
 +      if (Args.hasArg(options::OPT_static))
 +        CmdArgs.push_back("--start-group");
 +
-+      if (Args.hasArg(options::OPT_fstack_protector) ||
-+          Args.hasArg(options::OPT_fstack_protector_strong) ||
-+          Args.hasArg(options::OPT_fstack_protector_all)) {
-+        CmdArgs.push_back("-lssp_nonshared");
-+        CmdArgs.push_back("-lssp");
-+      }
 +      if (Args.hasArg(options::OPT_fopenmp))
 +        CmdArgs.push_back("-lgomp");
 +
@@ -504,7 +498,6 @@
 +  case ToolChain::CST_Libcxx:
 +    CmdArgs.push_back("-lc++");
 +    CmdArgs.push_back("-lc++abi");
-+    CmdArgs.push_back("-lcatgets");
 +    break;
 +  case ToolChain::CST_Libstdcxx:
 +    CmdArgs.push_back("-lstdc++");
