@@ -1,5 +1,5 @@
---- origsrc/cfe-5.0.1.src/lib/Driver/CMakeLists.txt	2017-06-25 03:29:09.000000000 -0500
-+++ src/cfe-5.0.1.src/lib/Driver/CMakeLists.txt	2017-12-31 23:15:13.183743100 -0600
+--- origsrc/cfe-7.0.1.src/lib/Driver/CMakeLists.txt	2018-07-31 10:21:46.000000000 -0400
++++ src/cfe-7.0.1.src/lib/Driver/CMakeLists.txt	2019-05-06 16:57:26.429706600 -0400
 @@ -39,6 +39,7 @@ add_clang_library(clangDriver
    ToolChains/Contiki.cpp
    ToolChains/CrossWindows.cpp
@@ -8,8 +8,8 @@
    ToolChains/Darwin.cpp
    ToolChains/DragonFly.cpp
    ToolChains/FreeBSD.cpp
---- origsrc/cfe-5.0.1.src/lib/Driver/Driver.cpp	2017-07-28 16:31:07.000000000 -0500
-+++ src/cfe-5.0.1.src/lib/Driver/Driver.cpp	2017-12-31 23:14:39.527316700 -0600
+--- origsrc/cfe-7.0.1.src/lib/Driver/Driver.cpp	2018-10-25 16:41:01.000000000 -0400
++++ src/cfe-7.0.1.src/lib/Driver/Driver.cpp	2019-05-06 16:58:17.632832100 -0400
 @@ -18,6 +18,7 @@
  #include "ToolChains/Contiki.h"
  #include "ToolChains/CrossWindows.h"
@@ -18,7 +18,7 @@
  #include "ToolChains/Darwin.h"
  #include "ToolChains/DragonFly.h"
  #include "ToolChains/FreeBSD.h"
-@@ -3856,6 +3857,9 @@ const ToolChain &Driver::getToolChain(co
+@@ -4349,6 +4350,9 @@ const ToolChain &Driver::getToolChain(co
          else
            TC = llvm::make_unique<toolchains::Generic_GCC>(*this, Target, Args);
          break;
@@ -28,11 +28,11 @@
        case llvm::Triple::GNU:
          TC = llvm::make_unique<toolchains::MinGW>(*this, Target, Args);
          break;
---- origsrc/cfe-5.0.1.src/lib/Driver/ToolChains/Clang.cpp	2018-01-01 14:01:28.340011100 -0600
-+++ src/cfe-5.0.1.src/lib/Driver/ToolChains/Clang.cpp	2018-01-02 23:23:08.899957400 -0600
-@@ -3204,6 +3204,12 @@ void Clang::ConstructJob(Compilation &C,
-     IsHosted = false;
-   }
+--- origsrc/cfe-7.0.1.src/lib/Driver/ToolChains/Clang.cpp	2019-05-06 16:56:33.897839600 -0400
++++ src/cfe-7.0.1.src/lib/Driver/ToolChains/Clang.cpp	2019-05-06 17:00:04.649183100 -0400
+@@ -3986,6 +3986,12 @@ void Clang::ConstructJob(Compilation &C,
+ 
+   Args.AddLastArg(CmdArgs, options::OPT_ftlsmodel_EQ);
  
 +  if (Triple.isOSCygMing() && Args.hasArg(options::OPT_static)) {
 +    CmdArgs.push_back("-flto-visibility-public-std");
@@ -43,9 +43,9 @@
    // Forward -f (flag) options which we can pass directly.
    Args.AddLastArg(CmdArgs, options::OPT_femit_all_decls);
    Args.AddLastArg(CmdArgs, options::OPT_fheinous_gnu_extensions);
---- origsrc/cfe-5.0.1.src/lib/Driver/ToolChains/Cygwin.cpp	1969-12-31 18:00:00.000000000 -0600
-+++ src/cfe-5.0.1.src/lib/Driver/ToolChains/Cygwin.cpp	2018-01-01 01:00:10.942028300 -0600
-@@ -0,0 +1,459 @@
+--- origsrc/cfe-7.0.1.src/lib/Driver/ToolChains/Cygwin.cpp	1969-12-31 19:00:00.000000000 -0500
++++ src/cfe-7.0.1.src/lib/Driver/ToolChains/Cygwin.cpp	2019-05-06 17:42:51.180505500 -0400
+@@ -0,0 +1,488 @@
 +//===--- Cygwin.cpp - CygwinToolChain Implementation ------------------------===//
 +//
 +//                     The LLVM Compiler Infrastructure
@@ -109,8 +109,10 @@
 +  ToolChain::RuntimeLibType RLT = getToolChain().GetRuntimeLibType(Args);
 +  bool Static = Args.hasArg(options::OPT_static_libgcc) ||
 +                Args.hasArg(options::OPT_static);
-+
++  bool Shared = Args.hasArg(options::OPT_shared);
++  bool CXX = getToolChain().getDriver().CCCIsCXX();
 +  if (RLT == ToolChain::RLT_Libgcc) {
++
 +    if (Static) {
 +      CmdArgs.push_back("-lgcc");
 +      CmdArgs.push_back("-lgcc_eh");
@@ -148,14 +150,6 @@
 +  // handled somewhere else.
 +  Args.ClaimAllArgs(options::OPT_w);
 +
-+  StringRef LinkerName = Args.getLastArgValue(options::OPT_fuse_ld_EQ, "ld");
-+  if (LinkerName.equals_lower("lld")) {
-+    CmdArgs.push_back("-flavor");
-+    CmdArgs.push_back("gnu");
-+  } else if (!LinkerName.equals_lower("ld")) {
-+    D.Diag(diag::err_drv_unsupported_linker) << LinkerName;
-+  }
-+
 +  if (!D.SysRoot.empty())
 +    CmdArgs.push_back(Args.MakeArgString("--sysroot=" + D.SysRoot));
 +
@@ -163,10 +157,16 @@
 +    CmdArgs.push_back("-s");
 +
 +  CmdArgs.push_back("-m");
-+  if (TC.getArch() == llvm::Triple::x86)
++  switch (TC.getArch()) {
++  case llvm::Triple::x86:
 +    CmdArgs.push_back("i386pe");
-+  if (TC.getArch() == llvm::Triple::x86_64)
++    break;
++  case llvm::Triple::x86_64:
 +    CmdArgs.push_back("i386pep");
++    break;
++  default:
++    llvm_unreachable("Unsupported target architecture.");
++  }
 +
 +  if (TC.getArch() == llvm::Triple::x86) {
 +    CmdArgs.push_back("--wrap");
@@ -211,7 +211,7 @@
 +      CmdArgs.push_back("--dll");
 +    else if (Args.hasArg(options::OPT_shared))
 +      CmdArgs.push_back("--shared");
-+    if (Args.hasArg(options::OPT_rdynamic))
++    else if (Args.hasArg(options::OPT_rdynamic))
 +      CmdArgs.push_back("--export-all-symbols");
 +    CmdArgs.push_back("-Bdynamic");
 +    if (Args.hasArg(options::OPT_mdll) || Args.hasArg(options::OPT_shared)) {
@@ -240,9 +240,9 @@
 +  Args.AddLastArg(CmdArgs, options::OPT_Z_Flag);
 +
 +  if (!Args.hasArg(options::OPT_nostdlib, options::OPT_nostartfiles)) {
-+    if (Args.hasArg(options::OPT_shared))
++    if (Args.hasArg(options::OPT_shared) || Args.hasArg(options::OPT_mdll)) {
 +      CmdArgs.push_back(Args.MakeArgString(TC.GetFilePath("crtbeginS.o")));
-+    else {
++    } else {
 +      CmdArgs.push_back(Args.MakeArgString(TC.GetFilePath("crt0.o")));
 +      if (Args.hasArg(options::OPT_pg))
 +        CmdArgs.push_back(Args.MakeArgString(TC.GetFilePath("gcrt0.o")));
@@ -258,8 +258,7 @@
 +
 +  // TODO: Add profile stuff here
 +
-+  if (D.CCCIsCXX() &&
-+      !Args.hasArg(options::OPT_nostdlib, options::OPT_nodefaultlibs)) {
++  if (TC.ShouldLinkCXXStdlib(Args)) {
 +    bool OnlyLibstdcxxStatic = Args.hasArg(options::OPT_static_libstdcxx) &&
 +                               !Args.hasArg(options::OPT_static);
 +    if (OnlyLibstdcxxStatic)
@@ -282,7 +281,7 @@
 +      if (Args.hasArg(options::OPT_pg))
 +        CmdArgs.push_back("-lgmon");
 +
-+      // add system libraries
++      // Add system libraries.
 +      if (Args.hasArg(options::OPT_mwindows)) {
 +        CmdArgs.push_back("-lgdi32");
 +        CmdArgs.push_back("-lcomdlg32");
@@ -294,8 +293,6 @@
 +
 +      if (Args.hasArg(options::OPT_static))
 +        CmdArgs.push_back("--end-group");
-+      else if (!LinkerName.equals_lower("lld"))
-+        AddLibGCC(Args, CmdArgs);
 +    }
 +
 +    if (!Args.hasArg(options::OPT_nostartfiles)) {
@@ -307,7 +304,7 @@
 +      CmdArgs.push_back(Args.MakeArgString(TC.GetFilePath("crtend.o")));
 +    }
 +  }
-+  const char *Exec = Args.MakeArgString(TC.GetProgramPath(LinkerName.data()));
++  const char *Exec = Args.MakeArgString(TC.GetLinkerPath());
 +  C.addCommand(llvm::make_unique<Command>(JA, *this, Exec, CmdArgs, Inputs));
 +}
 +
@@ -336,7 +333,8 @@
 +  Archs.emplace_back(getTriple().getArchName());
 +  Archs[0] += "-pc-cygwin";
 +  Archs.emplace_back("cygwin");
-+  Arch = Archs[0].str();
++  if (Arch.empty())
++    Arch = Archs[0].str();
 +  // lib: Arch Linux, Ubuntu, Windows
 +  // lib64: openSUSE Linux
 +  for (StringRef CandidateLib : {"lib", "lib64"}) {
@@ -363,12 +361,33 @@
 +  return make_error_code(std::errc::no_such_file_or_directory);
 +}
 +
++llvm::ErrorOr<std::string> toolchains::Cygwin::findClangRelativeSysroot() {
++  llvm::SmallVector<llvm::SmallString<32>, 2> Subdirs;
++  Subdirs.emplace_back(getTriple().str());
++  Subdirs.emplace_back(getTriple().getArchName());
++  Subdirs[1] += "-pc-cygwin";
++  StringRef ClangRoot =
++      llvm::sys::path::parent_path(getDriver().getInstalledDir());
++  StringRef Sep = llvm::sys::path::get_separator();
++  for (StringRef CandidateSubdir : Subdirs) {
++    if (llvm::sys::fs::is_directory(ClangRoot + Sep + CandidateSubdir)) {
++      Arch = CandidateSubdir;
++      return (ClangRoot + Sep + CandidateSubdir).str();
++    }
++  }
++  return make_error_code(std::errc::no_such_file_or_directory);
++}
++
 +toolchains::Cygwin::Cygwin(const Driver &D, const llvm::Triple &Triple,
 +                         const ArgList &Args)
 +    : ToolChain(D, Triple, Args), CudaInstallation(D, Triple, Args) {
 +  getProgramPaths().push_back(getDriver().getInstalledDir());
 +
-+  if (llvm::ErrorOr<std::string> GPPName = findGcc())
++  // Look for <clang-bin>/../<triplet>; if found, use <clang-bin>/.. as the
++  // base as it could still be a base for a gcc setup with libgcc.
++  if (llvm::ErrorOr<std::string> TargetSubdir = findClangRelativeSysroot())
++    Base = llvm::sys::path::parent_path(TargetSubdir.get());
++  else if (llvm::ErrorOr<std::string> GPPName = findGcc())
 +    Base = llvm::sys::path::parent_path(
 +        llvm::sys::path::parent_path(GPPName.get()));
 +  else
@@ -423,8 +442,11 @@
 +  return getArch() == llvm::Triple::x86_64;
 +}
 +
-+bool toolchains::Cygwin::UseSEHExceptions() const {
-+  return getArch() == llvm::Triple::x86_64;
++llvm::ExceptionHandling
++toolchains::Cygwin::GetExceptionModel(const ArgList &Args) const {
++  if (getArch() == llvm::Triple::x86_64)
++    return llvm::ExceptionHandling::WinEH;
++  return llvm::ExceptionHandling::DwarfCFI;
 +}
 +
 +void toolchains::Cygwin::AddCudaIncludeArgs(const ArgList &DriverArgs,
@@ -440,6 +462,12 @@
 +                                                  ArgStringList &CC1Args) const {
 +  if (DriverArgs.hasArg(options::OPT_nostdinc))
 +    return;
++
++  if (!DriverArgs.hasArg(options::OPT_nobuiltininc)) {
++    SmallString<1024> P(getDriver().ResourceDir);
++    llvm::sys::path::append(P, "include");
++    addSystemInclude(DriverArgs, CC1Args, P.str());
++  }
 +
 +  if (!DriverArgs.hasArg(options::OPT_nostdlibinc))
 +    addSystemInclude(DriverArgs, CC1Args, getDriver().SysRoot + "/usr/local/include");
@@ -465,11 +493,12 @@
 +      DriverArgs.hasArg(options::OPT_nostdincxx))
 +    return;
 +
++  StringRef Slash = llvm::sys::path::get_separator();
++
 +  switch (GetCXXStdlibType(DriverArgs)) {
 +  case ToolChain::CST_Libcxx:
 +    addSystemInclude(DriverArgs, CC1Args,
-+                     Base + "include" + llvm::sys::path::get_separator() +
-+                         "c++" + llvm::sys::path::get_separator() + "v1");
++                     Base + "include" + Slash + "c++" + Slash + "v1");
 +    break;
 +
 +  case ToolChain::CST_Libstdcxx:
@@ -484,7 +513,7 @@
 +    llvm::sys::path::append(CppIncludeBases[3], "include", "c++");
 +    for (auto &CppIncludeBase : CppIncludeBases) {
 +      addSystemInclude(DriverArgs, CC1Args, CppIncludeBase);
-+      CppIncludeBase += llvm::sys::path::get_separator();
++      CppIncludeBase += Slash;
 +      addSystemInclude(DriverArgs, CC1Args, CppIncludeBase + Arch);
 +      addSystemInclude(DriverArgs, CC1Args, CppIncludeBase + "backward");
 +    }
@@ -505,9 +534,9 @@
 +    break;
 +  }
 +}
---- origsrc/cfe-5.0.1.src/lib/Driver/ToolChains/Cygwin.h	1969-12-31 18:00:00.000000000 -0600
-+++ src/cfe-5.0.1.src/lib/Driver/ToolChains/Cygwin.h	2018-01-01 01:00:34.348395300 -0600
-@@ -0,0 +1,105 @@
+--- origsrc/cfe-7.0.1.src/lib/Driver/ToolChains/Cygwin.h	1969-12-31 19:00:00.000000000 -0500
++++ src/cfe-7.0.1.src/lib/Driver/ToolChains/Cygwin.h	2019-05-06 17:43:53.961497300 -0400
+@@ -0,0 +1,108 @@
 +//===--- Cygwin.h - Cygwin ToolChain Implementations --------------*- C++ -*-===//
 +//
 +//                     The LLVM Compiler Infrastructure
@@ -574,7 +603,9 @@
 +  bool isPICDefault() const override;
 +  bool isPIEDefault() const override;
 +  bool isPICDefaultForced() const override;
-+  bool UseSEHExceptions() const;
++
++  llvm::ExceptionHandling GetExceptionModel(
++      const llvm::opt::ArgList &Args) const override;
 +
 +  void
 +  AddClangSystemIncludeArgs(const llvm::opt::ArgList &DriverArgs,
@@ -582,8 +613,8 @@
 +  void AddClangCXXStdlibIncludeArgs(
 +      const llvm::opt::ArgList &DriverArgs,
 +      llvm::opt::ArgStringList &CC1Args) const override;
-+  void AddCXXStdlibLibArgs(const llvm::opt::ArgList &Args,
-+                           llvm::opt::ArgStringList &CmdArgs) const override;
++  void AddCXXStdlibLibArgs(const llvm::opt::ArgList &DriverArgs,
++                           llvm::opt::ArgStringList &CC1Args) const override;
 +
 +  void AddCudaIncludeArgs(const llvm::opt::ArgList &DriverArgs,
 +                          llvm::opt::ArgStringList &CC1Args) const override;
@@ -606,6 +637,7 @@
 +  mutable std::unique_ptr<tools::gcc::Compiler> Compiler;
 +  void findGccLibDir();
 +  llvm::ErrorOr<std::string> findGcc();
++  llvm::ErrorOr<std::string> findClangRelativeSysroot();
 +};
 +
 +} // end namespace toolchains
@@ -613,10 +645,10 @@
 +} // end namespace clang
 +
 +#endif // LLVM_CLANG_LIB_DRIVER_TOOLCHAINS_CYGWIN_H
---- origsrc/cfe-5.0.1.src/lib/Frontend/InitHeaderSearch.cpp	2018-01-01 00:33:28.406067800 -0600
-+++ src/cfe-5.0.1.src/lib/Frontend/InitHeaderSearch.cpp	2018-01-01 00:37:42.094845000 -0600
-@@ -219,9 +219,7 @@ void InitHeaderSearch::AddDefaultCInclud
-     case llvm::Triple::ELFIAMCU:
+--- origsrc/cfe-7.0.1.src/lib/Frontend/InitHeaderSearch.cpp	2018-06-28 19:23:45.000000000 -0400
++++ src/cfe-7.0.1.src/lib/Frontend/InitHeaderSearch.cpp	2019-05-06 17:02:36.494644600 -0400
+@@ -223,9 +223,7 @@ void InitHeaderSearch::AddDefaultCInclud
+     case llvm::Triple::Fuchsia:
        break;
      case llvm::Triple::Win32:
 -      if (triple.getEnvironment() != llvm::Triple::Cygnus)
@@ -625,7 +657,7 @@
      default:
        // FIXME: temporary hack: hard-coded paths.
        AddPath("/usr/local/include", System, false);
-@@ -304,15 +302,7 @@ void InitHeaderSearch::AddDefaultCInclud
+@@ -309,14 +307,7 @@ void InitHeaderSearch::AddDefaultCInclud
    case llvm::Triple::RTEMS:
      break;
    case llvm::Triple::Win32:
@@ -637,12 +669,11 @@
 -    case llvm::Triple::GNU:
 -      break;
 -    }
--    break;
 +    llvm_unreachable("Include management is handled in the driver.");
+     break;
    default:
      break;
-   }
-@@ -400,17 +390,7 @@ AddDefaultCPlusPlusIncludePaths(const ll
+@@ -416,17 +407,7 @@ void InitHeaderSearch::AddDefaultCPlusPl
      llvm_unreachable("Include management is handled in the driver.");
      break;
    case llvm::Triple::Win32:
@@ -661,7 +692,7 @@
      break;
    case llvm::Triple::DragonFly:
      AddPath("/usr/include/c++/5.0", CXXSystem, false);
-@@ -447,10 +427,7 @@ void InitHeaderSearch::AddDefaultInclude
+@@ -464,10 +445,7 @@ void InitHeaderSearch::AddDefaultInclude
      return;
  
    case llvm::Triple::Win32:
@@ -672,4 +703,4 @@
 +    return;
    }
  
-   if (Lang.CPlusPlus && HSOpts.UseStandardCXXIncludes &&
+   if (Lang.CPlusPlus && !Lang.AsmPreprocessor &&

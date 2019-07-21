@@ -9,7 +9,7 @@
      set(ARG_ENABLE_SHARED SHARED)
    endif()
    llvm_add_library(${name} ${ARG_ENABLE_SHARED} ${ARG_UNPARSED_ARGUMENTS} ${srcs})
-+  set_target_properties(${name} PROPERTIES SOVERSION "${CLANG_VERSION_MAJOR}.${CLANG_VERSION_MINOR}")
++  set_target_properties(${name} PROPERTIES SOVERSION "${CLANG_VERSION_MAJOR}")
  
    if(TARGET ${name})
      target_link_libraries(${name} INTERFACE ${LLVM_COMMON_LIBS})
