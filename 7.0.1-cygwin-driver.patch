@@ -122,10 +122,7 @@
 +    }
 +  } else {
 +    AddRunTimeLibs(getToolChain(), getToolChain().getDriver(), CmdArgs, Args);
-+    if (Static)
-+      CmdArgs.push_back("-lgcc_eh");
-+    else
-+      CmdArgs.push_back("-lgcc_s");
++    CmdArgs.push_back("-lunwind");
 +  }
 +
 +  CmdArgs.push_back("-lcygwin");
@@ -168,33 +165,35 @@
 +    llvm_unreachable("Unsupported target architecture.");
 +  }
 +
-+  if (TC.getArch() == llvm::Triple::x86) {
++  if (!Args.getLastArgValue(options::OPT_fuse_ld_EQ, "link").equals_lower("lld")) {
++    if (TC.getArch() == llvm::Triple::x86) {
++      CmdArgs.push_back("--wrap");
++      CmdArgs.push_back("_Znwj");
++      CmdArgs.push_back("--wrap");
++      CmdArgs.push_back("_Znaj");
++      CmdArgs.push_back("--wrap");
++      CmdArgs.push_back("_ZnwjRKSt9nothrow_t");
++      CmdArgs.push_back("--wrap");
++      CmdArgs.push_back("_ZnajRKSt9nothrow_t");
++    } else {
++      CmdArgs.push_back("--wrap");
++      CmdArgs.push_back("_Znwm");
++      CmdArgs.push_back("--wrap");
++      CmdArgs.push_back("_Znam");
++      CmdArgs.push_back("--wrap");
++      CmdArgs.push_back("_ZnwmRKSt9nothrow_t");
++      CmdArgs.push_back("--wrap");
++      CmdArgs.push_back("_ZnamRKSt9nothrow_t");
++    }
 +    CmdArgs.push_back("--wrap");
-+    CmdArgs.push_back("_Znwj");
++    CmdArgs.push_back("_ZdlPv");
 +    CmdArgs.push_back("--wrap");
-+    CmdArgs.push_back("_Znaj");
++    CmdArgs.push_back("_ZdaPv");
 +    CmdArgs.push_back("--wrap");
-+    CmdArgs.push_back("_ZnwjRKSt9nothrow_t");
++    CmdArgs.push_back("_ZdlPvRKSt9nothrow_t");
 +    CmdArgs.push_back("--wrap");
-+    CmdArgs.push_back("_ZnajRKSt9nothrow_t");
-+  } else {
-+    CmdArgs.push_back("--wrap");
-+    CmdArgs.push_back("_Znwm");
-+    CmdArgs.push_back("--wrap");
-+    CmdArgs.push_back("_Znam");
-+    CmdArgs.push_back("--wrap");
-+    CmdArgs.push_back("_ZnwmRKSt9nothrow_t");
-+    CmdArgs.push_back("--wrap");
-+    CmdArgs.push_back("_ZnamRKSt9nothrow_t");
++    CmdArgs.push_back("_ZdaPvKSt9nothrow_t");
 +  }
-+  CmdArgs.push_back("--wrap");
-+  CmdArgs.push_back("_ZdlPv");
-+  CmdArgs.push_back("--wrap");
-+  CmdArgs.push_back("_ZdaPv");
-+  CmdArgs.push_back("--wrap");
-+  CmdArgs.push_back("_ZdlPvRKSt9nothrow_t");
-+  CmdArgs.push_back("--wrap");
-+  CmdArgs.push_back("_ZdaPvKSt9nothrow_t");
 +
 +  if (Args.hasArg(options::OPT_mwindows)) {
 +    CmdArgs.push_back("--subsystem");
@@ -401,6 +400,7 @@
 +  getFilePaths().push_back(
 +      (Base + Arch + llvm::sys::path::get_separator() + "lib").str());
 +  getFilePaths().push_back(getDriver().SysRoot + "/usr/lib");
++  getFilePaths().push_back(getDriver().SysRoot + "/usr/lib/w32api");
 +}
 +
 +bool toolchains::Cygwin::IsIntegratedAssemblerDefault() const { return true; }
