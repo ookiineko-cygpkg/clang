@@ -1,6 +1,6 @@
---- origsrc/cfe-7.0.1.src/lib/Driver/CMakeLists.txt	2018-07-31 10:21:46.000000000 -0400
-+++ src/cfe-7.0.1.src/lib/Driver/CMakeLists.txt	2019-05-06 16:57:26.429706600 -0400
-@@ -39,6 +39,7 @@ add_clang_library(clangDriver
+--- origsrc/clang-9.0.1.src/lib/Driver/CMakeLists.txt
++++ src/clang-9.0.1.src/lib/Driver/CMakeLists.txt
+@@ -42,6 +42,7 @@ add_clang_library(clangDriver
    ToolChains/Contiki.cpp
    ToolChains/CrossWindows.cpp
    ToolChains/Cuda.cpp
@@ -8,9 +8,10 @@
    ToolChains/Darwin.cpp
    ToolChains/DragonFly.cpp
    ToolChains/FreeBSD.cpp
---- origsrc/cfe-7.0.1.src/lib/Driver/Driver.cpp	2018-10-25 16:41:01.000000000 -0400
-+++ src/cfe-7.0.1.src/lib/Driver/Driver.cpp	2019-05-06 16:58:17.632832100 -0400
-@@ -18,6 +18,7 @@
+
+--- origsrc/clang-9.0.1.src/lib/Driver/Driver.cpp
++++ src/clang-9.0.1.src/lib/Driver/Driver.cpp
+@@ -19,6 +19,7 @@
  #include "ToolChains/Contiki.h"
  #include "ToolChains/CrossWindows.h"
  #include "ToolChains/Cuda.h"
@@ -18,7 +19,7 @@
  #include "ToolChains/Darwin.h"
  #include "ToolChains/DragonFly.h"
  #include "ToolChains/FreeBSD.h"
-@@ -4349,6 +4350,9 @@ const ToolChain &Driver::getToolChain(co
+@@ -4660,6 +4661,9 @@ const ToolChain &Driver::getToolChain(co
          else
            TC = llvm::make_unique<toolchains::Generic_GCC>(*this, Target, Args);
          break;
@@ -28,9 +29,10 @@
        case llvm::Triple::GNU:
          TC = llvm::make_unique<toolchains::MinGW>(*this, Target, Args);
          break;
---- origsrc/cfe-7.0.1.src/lib/Driver/ToolChains/Clang.cpp	2019-05-06 16:56:33.897839600 -0400
-+++ src/cfe-7.0.1.src/lib/Driver/ToolChains/Clang.cpp	2019-05-06 17:00:04.649183100 -0400
-@@ -3986,6 +3986,12 @@ void Clang::ConstructJob(Compilation &C,
+
+--- origsrc/clang-9.0.1.src/lib/Driver/ToolChains/Clang.cpp
++++ src/clang-9.0.1.src/lib/Driver/ToolChains/Clang.cpp
+@@ -4495,6 +4495,12 @@ void Clang::ConstructJob(Compilation &C,
  
    Args.AddLastArg(CmdArgs, options::OPT_ftlsmodel_EQ);
  
@@ -43,8 +45,9 @@
    // Forward -f (flag) options which we can pass directly.
    Args.AddLastArg(CmdArgs, options::OPT_femit_all_decls);
    Args.AddLastArg(CmdArgs, options::OPT_fheinous_gnu_extensions);
---- origsrc/cfe-7.0.1.src/lib/Driver/ToolChains/Cygwin.cpp	1969-12-31 19:00:00.000000000 -0500
-+++ src/cfe-7.0.1.src/lib/Driver/ToolChains/Cygwin.cpp	2019-05-06 17:42:51.180505500 -0400
+
+--- origsrc/clang-9.0.1.src/lib/Driver/ToolChains/Cygwin.cpp
++++ src/clang-9.0.1.src/lib/Driver/ToolChains/Cygwin.cpp
 @@ -0,0 +1,488 @@
 +//===--- Cygwin.cpp - CygwinToolChain Implementation ------------------------===//
 +//
@@ -100,7 +103,7 @@
 +
 +  if (Args.hasArg(options::OPT_gsplit_dwarf))
 +    SplitDebugInfo(getToolChain(), C, *this, JA, Args, Output,
-+                   SplitDebugName(Args, Inputs[0]));
++                   SplitDebugName(Args, Inputs[0], Output));
 +}
 +
 +void tools::Cygwin::Linker::AddLibGCC(const ArgList &Args,
@@ -534,8 +537,9 @@
 +    break;
 +  }
 +}
---- origsrc/cfe-7.0.1.src/lib/Driver/ToolChains/Cygwin.h	1969-12-31 19:00:00.000000000 -0500
-+++ src/cfe-7.0.1.src/lib/Driver/ToolChains/Cygwin.h	2019-05-06 17:43:53.961497300 -0400
+
+--- origsrc/clang-9.0.1.src/lib/Driver/ToolChains/Cygwin.h	1969-12-31 19:00:00.000000000 -0500
++++ src/clang-9.0.1.src/lib/Driver/ToolChains/Cygwin.h	2019-05-06 17:43:53.961497300 -0400
 @@ -0,0 +1,108 @@
 +//===--- Cygwin.h - Cygwin ToolChain Implementations --------------*- C++ -*-===//
 +//
@@ -645,9 +649,9 @@
 +} // end namespace clang
 +
 +#endif // LLVM_CLANG_LIB_DRIVER_TOOLCHAINS_CYGWIN_H
---- origsrc/cfe-7.0.1.src/lib/Frontend/InitHeaderSearch.cpp	2018-06-28 19:23:45.000000000 -0400
-+++ src/cfe-7.0.1.src/lib/Frontend/InitHeaderSearch.cpp	2019-05-06 17:02:36.494644600 -0400
-@@ -223,9 +223,7 @@ void InitHeaderSearch::AddDefaultCInclud
+--- origsrc/clang-9.0.1.src/lib/Frontend/InitHeaderSearch.cpp
++++ src/clang-9.0.1.src/lib/Frontend/InitHeaderSearch.cpp
+@@ -226,9 +226,7 @@
      case llvm::Triple::Fuchsia:
        break;
      case llvm::Triple::Win32:
@@ -657,7 +661,7 @@
      default:
        // FIXME: temporary hack: hard-coded paths.
        AddPath("/usr/local/include", System, false);
-@@ -309,14 +307,7 @@ void InitHeaderSearch::AddDefaultCInclud
+@@ -313,14 +311,7 @@
    case llvm::Triple::RTEMS:
      break;
    case llvm::Triple::Win32:
@@ -673,7 +677,7 @@
      break;
    default:
      break;
-@@ -416,17 +407,7 @@ void InitHeaderSearch::AddDefaultCPlusPl
+@@ -379,17 +370,7 @@
      llvm_unreachable("Include management is handled in the driver.");
      break;
    case llvm::Triple::Win32:
@@ -692,7 +696,7 @@
      break;
    case llvm::Triple::DragonFly:
      AddPath("/usr/include/c++/5.0", CXXSystem, false);
-@@ -464,10 +445,7 @@ void InitHeaderSearch::AddDefaultInclude
+@@ -422,10 +403,7 @@
      return;
  
    case llvm::Triple::Win32:
@@ -701,6 +705,7 @@
 -      return;
 -    break;
 +    return;
-   }
  
-   if (Lang.CPlusPlus && !Lang.AsmPreprocessor &&
+   case llvm::Triple::UnknownOS:
+     if (triple.getArch() == llvm::Triple::wasm32 ||
+
