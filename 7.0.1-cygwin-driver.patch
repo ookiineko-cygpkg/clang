@@ -21,13 +21,13 @@
  #include "ToolChains/FreeBSD.h"
 @@ -4660,6 +4661,9 @@ const ToolChain &Driver::getToolChain(co
          else
-           TC = llvm::make_unique<toolchains::Generic_GCC>(*this, Target, Args);
+           TC = std::make_unique<toolchains::Generic_GCC>(*this, Target, Args);
          break;
 +      case llvm::Triple::Cygnus:
-+        TC = llvm::make_unique<toolchains::Cygwin>(*this, Target, Args);
++        TC = std::make_unique<toolchains::Cygwin>(*this, Target, Args);
 +        break;
        case llvm::Triple::GNU:
-         TC = llvm::make_unique<toolchains::MinGW>(*this, Target, Args);
+         TC = std::make_unique<toolchains::MinGW>(*this, Target, Args);
          break;
 
 --- origsrc/clang-9.0.1.src/lib/Driver/ToolChains/Clang.cpp
@@ -48,7 +48,7 @@
 
 --- origsrc/clang-9.0.1.src/lib/Driver/ToolChains/Cygwin.cpp
 +++ src/clang-9.0.1.src/lib/Driver/ToolChains/Cygwin.cpp
-@@ -0,0 +1,488 @@
+@@ -0,0 +1,500 @@
 +//===--- Cygwin.cpp - CygwinToolChain Implementation ------------------------===//
 +//
 +//                     The LLVM Compiler Infrastructure
@@ -99,7 +99,7 @@
 +    CmdArgs.push_back(II.getFilename());
 +
 +  const char *Exec = Args.MakeArgString(getToolChain().GetProgramPath("as"));
-+  C.addCommand(llvm::make_unique<Command>(JA, *this, Exec, CmdArgs, Inputs));
++  C.addCommand(std::make_unique<Command>(JA, *this, Exec, CmdArgs, Inputs));
 +
 +  if (Args.hasArg(options::OPT_gsplit_dwarf))
 +    SplitDebugInfo(getToolChain(), C, *this, JA, Args, Output,
@@ -231,7 +231,19 @@
 +  }
 +
 +  CmdArgs.push_back("-o");
-+  CmdArgs.push_back(Output.getFilename());
++  const char *OutputFile = Output.getFilename();
++  // GCC implicitly adds an .exe extension if it is given an output file name
++  // that lacks an extension. However, GCC only does this when actually
++  // running on Cygwin, not when operating as a cross compiler. As some users
++  // have come to rely on this behaviour, try to replicate it.
++#ifdef __CYGWIN__
++  if (!llvm::sys::path::has_extension(OutputFile))
++    CmdArgs.push_back(Args.MakeArgString(Twine(OutputFile) + ".exe"));
++  else
++    CmdArgs.push_back(OutputFile);
++#else
++  CmdArgs.push_back(OutputFile);
++#endif
 +
 +  Args.AddAllArgs(CmdArgs, options::OPT_e);
 +  // FIXME: add -N, -n flags
@@ -307,7 +319,7 @@
 +    }
 +  }
 +  const char *Exec = Args.MakeArgString(TC.GetLinkerPath());
-+  C.addCommand(llvm::make_unique<Command>(JA, *this, Exec, CmdArgs, Inputs));
++  C.addCommand(std::make_unique<Command>(JA, *this, Exec, CmdArgs, Inputs));
 +}
 +
 +// Simplified from Generic_GCC::GCCInstallationDetector::ScanLibDirForGCCTriple.
