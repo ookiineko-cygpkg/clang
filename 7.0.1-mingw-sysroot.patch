@@ -1,7 +1,7 @@
 --- origsrc/cfe-7.0.1.src/lib/Driver/ToolChains/MinGW.cpp	2019-05-06 18:43:20.648234800 -0400
 +++ src/cfe-7.0.1.src/lib/Driver/ToolChains/MinGW.cpp	2019-05-06 18:46:10.024988300 -0400
 @@ -337,11 +337,9 @@ toolchains::MinGW::MinGW(const Driver &D
-     : ToolChain(D, Triple, Args), CudaInstallation(D, Triple, Args) {
+       RocmInstallation(D, Triple, Args) {
    getProgramPaths().push_back(getDriver().getInstalledDir());
  
 -  if (getDriver().SysRoot.size())
@@ -10,9 +10,9 @@
    // base as it could still be a base for a gcc setup with libgcc.
 -  else if (llvm::ErrorOr<std::string> TargetSubdir = findClangRelativeSysroot())
 +  if (llvm::ErrorOr<std::string> TargetSubdir = findClangRelativeSysroot())
-     Base = llvm::sys::path::parent_path(TargetSubdir.get());
+     Base = std::string(llvm::sys::path::parent_path(TargetSubdir.get()));
    else if (llvm::ErrorOr<std::string> GPPName = findGcc())
-     Base = llvm::sys::path::parent_path(
+     Base = std::string(llvm::sys::path::parent_path(
 @@ -356,8 +354,12 @@ toolchains::MinGW::MinGW(const Driver &D
    getFilePaths().push_back(GccLibDir);
    getFilePaths().push_back(

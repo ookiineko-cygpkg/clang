@@ -26,8 +26,8 @@
    // -fuse-cxa-atexit is default.
    if (!Args.hasFlag(
            options::OPT_fuse_cxa_atexit, options::OPT_fno_use_cxa_atexit,
--          !RawTriple.isOSWindows() &&
-+          !IsWindowsMSVC &&
+-          !RawTriple.isOSAIX() && !RawTriple.isOSWindows() &&
++          !RawTriple.isOSAIX() && !IsWindowsMSVC &&
                TC.getArch() != llvm::Triple::xcore &&
                ((RawTriple.getVendor() != llvm::Triple::MipsTechnologies) ||
                 RawTriple.hasEnvironment())) ||

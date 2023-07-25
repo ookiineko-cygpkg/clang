@@ -5,7 +5,7 @@ inherit cmake python3
 BUILD_REQUIRES=" cmake llvm libllvm-devel python39-devel"
 
 NAME="clang"
-VERSION="10.0.1"
+VERSION="11.0.0"
 RELEASE="1"
 CATEGORY="Devel"
 SUMMARY="C/C++ compiler frontend based on LLVM"
@@ -34,7 +34,7 @@ PATCH_URI="
 "
 RESTRICT="debuginfo"
 
-PKG_NAMES="clang libclang10 clang-analyzer git-clang-format libclang-devel"
+PKG_NAMES="clang libclang11 clang-analyzer git-clang-format libclang-devel"
 clang_REQUIRES="binutils compiler-rt cygwin-devel gcc-core gcc-g++ libc++-devel libunwind-devel windows-default-manifest"
 clang_CONTENTS="
   --exclude=html
@@ -44,7 +44,6 @@ clang_CONTENTS="
   usr/bin/clang-cpp
   usr/bin/clang-extdef-mapping.exe
   usr/bin/clang-format.exe
-  usr/bin/clang-import-test.exe
   usr/bin/clang-offload-bundler.exe
   usr/bin/clang-offload-wrapper.exe
   usr/bin/clang-refactor.exe
@@ -66,12 +65,12 @@ clang_analyzer_CONTENTS="
 git_clang_format_SUMMARY="C/C++ code formatting support for Git"
 git_clang_format_REQUIRES="clang git"
 git_clang_format_CONTENTS="usr/bin/git-clang-format"
-libclang10_CATEGORY="Libs"
-libclang10_SUMMARY="C/C++/ObjC compiler libraries (runtime)"
-libclang10_CONTENTS="
-  usr/bin/clang-10.exe
-  usr/bin/clang++-10
-  usr/bin/cygclang*-10.dll
+libclang11_CATEGORY="Libs"
+libclang11_SUMMARY="C/C++/ObjC compiler libraries (runtime)"
+libclang11_CONTENTS="
+  usr/bin/clang-11.exe
+  usr/bin/clang++-11
+  usr/bin/cygclang*-11.dll
   usr/lib/clang/${PV}/
 "
 libclang_devel_CATEGORY="Libs"
@@ -103,6 +102,7 @@ src_compile() {
 	-DCLANG_ENABLE_ARCMT=ON \
 	-DCLANG_ENABLE_STATIC_ANALYZER=ON \
 	-DCLANG_INCLUDE_TESTS=OFF \
+	-DLLVM_INCLUDE_TESTS=OFF \
 	-DCLANG_INCLUDE_EXAMPLES=OFF \
 	-DCLANG_INCLUDE_DOCS=OFF \
 	-DGCC_INSTALL_PREFIX=/usr \

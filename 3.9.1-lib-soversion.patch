@@ -1,11 +1,14 @@
 --- origsrc/clang-9.0.1.src/cmake/modules/AddClang.cmake
 +++ src/clang-9.0.1.src/cmake/modules/AddClang.cmake
-@@ -80,7 +80,7 @@
-       ${ARG_ADDITIONAL_HEADERS} # It may contain unparsed unknown args.
+@@ -82,9 +82,9 @@
        )
    endif()
--  if(ARG_SHARED)
-+  if(ARG_SHARED OR BUILD_SHARED_LIBS)
+ 
+-  if(ARG_SHARED AND ARG_STATIC)
++  if((ARG_SHARED OR BUILD_SHARED_LIBS) AND ARG_STATIC)
+     set(LIBTYPE SHARED STATIC)
+-  elseif(ARG_SHARED)
++  elseif(ARG_SHARED OR BUILD_SHARED_LIBS)
      set(LIBTYPE SHARED)
    else()
      # llvm_add_library ignores BUILD_SHARED_LIBS if STATIC is explicitly set,
@@ -17,4 +20,3 @@
  
    if(TARGET ${name})
      target_link_libraries(${name} INTERFACE ${LLVM_COMMON_LIBS})
-
