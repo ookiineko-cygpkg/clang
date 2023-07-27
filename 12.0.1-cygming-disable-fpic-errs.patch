@@ -1,0 +1,13 @@
+Origin: https://github.com/msys2/MINGW-packages/blob/fd3d044e277461d4c6fa384c0936d16429813362/mingw-w64-clang/0101-Disable-fPIC-errors.patch
+
+--- origsrc/clang-12.0.1.src/lib/Driver/ToolChains/CommonArgs.cpp
++++ src/clang-12.0.1.src/lib/Driver/ToolChains/CommonArgs.cpp
+@@ -1178,7 +1178,7 @@ tools::ParsePICArgs(const ToolChain &ToolChain, const ArgList &Args) {
+                                     options::OPT_fpic, options::OPT_fno_pic,
+                                     options::OPT_fPIE, options::OPT_fno_PIE,
+                                     options::OPT_fpie, options::OPT_fno_pie);
+-  if (Triple.isOSWindows() && LastPICArg &&
++  if (Triple.isWindowsMSVCEnvironment() && LastPICArg &&
+       LastPICArg ==
+           Args.getLastArg(options::OPT_fPIC, options::OPT_fpic,
+                           options::OPT_fPIE, options::OPT_fpie)) {

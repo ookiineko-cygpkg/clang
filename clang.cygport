@@ -5,7 +5,7 @@ inherit cmake python3
 BUILD_REQUIRES=" cmake llvm libllvm-devel python39-devel"
 
 NAME="clang"
-VERSION="11.0.0"
+VERSION="12.0.1"
 RELEASE="1"
 CATEGORY="Devel"
 SUMMARY="C/C++ compiler frontend based on LLVM"
@@ -31,10 +31,13 @@ PATCH_URI="
   5.0.1-newlib-ftm.patch
   7.0.1-objc-seh.patch
   9.0.1-cygwin-oslibname.patch
+  12.0.1-cygming-disable-fpic-errs.patch
+  12.0.1-cygming-emutls-dso-local.patch
+  12.0.1-emutls-vs-autoimport.patch
 "
 RESTRICT="debuginfo"
 
-PKG_NAMES="clang libclang11 clang-analyzer git-clang-format libclang-devel"
+PKG_NAMES="clang libclang12 clang-analyzer git-clang-format libclang-devel"
 clang_REQUIRES="binutils compiler-rt cygwin-devel gcc-core gcc-g++ libc++-devel libunwind-devel windows-default-manifest"
 clang_CONTENTS="
   --exclude=html
@@ -65,12 +68,12 @@ clang_analyzer_CONTENTS="
 git_clang_format_SUMMARY="C/C++ code formatting support for Git"
 git_clang_format_REQUIRES="clang git"
 git_clang_format_CONTENTS="usr/bin/git-clang-format"
-libclang11_CATEGORY="Libs"
-libclang11_SUMMARY="C/C++/ObjC compiler libraries (runtime)"
-libclang11_CONTENTS="
-  usr/bin/clang-11.exe
-  usr/bin/clang++-11
-  usr/bin/cygclang*-11.dll
+libclang12_CATEGORY="Libs"
+libclang12_SUMMARY="C/C++/ObjC compiler libraries (runtime)"
+libclang12_CONTENTS="
+  usr/bin/clang-12.exe
+  usr/bin/clang++-12
+  usr/bin/cygclang*-12.dll
   usr/lib/clang/${PV}/
 "
 libclang_devel_CATEGORY="Libs"

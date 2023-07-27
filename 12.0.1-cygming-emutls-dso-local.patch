@@ -1,0 +1,39 @@
+Backport of https://github.com/llvm/llvm-project/commit/0e4cf807aeaf54a10e02176498a7df13ac722b37
+
+--- origsrc/llvm-12.0.1.src/lib/CodeGen/CodeGenModule.cpp
++++ src/llvm-12.0.1.src/lib/CodeGen/CodeGenModule.cpp
+@@ -986,8 +986,13 @@ static bool shouldAssumeDSOLocal(const CodeGenModule &CGM,
+     // In MinGW, variables without DLLImport can still be automatically
+     // imported from a DLL by the linker; don't mark variables that
+     // potentially could come from another DLL as DSO local.
++
++    // With EmulatedTLS, TLS variables can be autoimported from other DLLs
++    // (and this actually happens in the public interface of libstdc++), so
++    // such variables can't be marked as DSO local. (Native TLS variables
++    // can't be dllimported at all, though.)
+     if (GV->isDeclarationForLinker() && isa<llvm::GlobalVariable>(GV) &&
+-        !GV->isThreadLocal())
++        (!GV->isThreadLocal() || CGM.getCodeGenOpts().EmulatedTLS))
+       return false;
+   }
+ 
+--- origsrc/llvm-12.0.1.src/test/CodeGen/dso-local-executable.c
++++ src/llvm-12.0.1.src/test/CodeGen/dso-local-executable.c
+@@ -9,13 +9,15 @@
+ // COFF-DAG: define dso_local i32* @zed()
+ // COFF-DAG: declare dllimport void @import_func()
+ 
+-// RUN: %clang_cc1 -triple x86_64-w64-mingw32 -emit-llvm %s -o - | FileCheck --check-prefix=MINGW %s
++// RUN: %clang_cc1 -triple x86_64-w64-mingw32 -emit-llvm %s -o - | FileCheck --check-prefixes=MINGW,MINGW-NATIVE_TLS %s
++// RUN: %clang_cc1 -triple x86_64-w64-mingw32 -emit-llvm %s -o - -femulated-tls | FileCheck --check-prefixes=MINGW,MINGW-EMUTLS %s
+ // MINGW:      @baz = dso_local global i32 42
+ // MINGW-NEXT: @import_var = external dllimport global i32
+ // MINGW-NEXT: @weak_bar = extern_weak global i32
+ // MINGW-NEXT: @bar = external global i32
+ // MINGW-NEXT: @local_thread_var = dso_local thread_local global i32 42
+-// MINGW-NEXT: @thread_var = external dso_local thread_local global i32
++// MINGW-NATIVE_TLS-NEXT: @thread_var = external dso_local thread_local global i32
++// MINGW-EMUTLS-NEXT: @thread_var = external thread_local global i32
+ // MINGW-DAG: declare dso_local void @foo()
+ // MINGW-DAG: define dso_local i32* @zed()
+ // MINGW-DAG: declare dllimport void @import_func()
