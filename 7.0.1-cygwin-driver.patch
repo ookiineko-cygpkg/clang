@@ -48,7 +48,7 @@
 
 --- origsrc/clang-9.0.1.src/lib/Driver/ToolChains/Cygwin.cpp
 +++ src/clang-9.0.1.src/lib/Driver/ToolChains/Cygwin.cpp
-@@ -0,0 +1,520 @@
+@@ -0,0 +1,525 @@
 +//===--- Cygwin.cpp - CygwinToolChain Implementation ------------------------===//
 +//
 +//                     The LLVM Compiler Infrastructure
@@ -59,11 +59,11 @@
 +//===----------------------------------------------------------------------===//
 +
 +#include "Cygwin.h"
-+#include "InputInfo.h"
 +#include "CommonArgs.h"
 +#include "clang/Driver/Compilation.h"
 +#include "clang/Driver/Driver.h"
 +#include "clang/Driver/DriverDiagnostic.h"
++#include "clang/Driver/InputInfo.h"
 +#include "clang/Driver/Options.h"
 +#include "llvm/Option/ArgList.h"
 +#include "llvm/Support/FileSystem.h"
@@ -127,7 +127,8 @@
 +    }
 +  } else {
 +    AddRunTimeLibs(getToolChain(), getToolChain().getDriver(), CmdArgs, Args);
-+    CmdArgs.push_back("-lunwind");
++    if (!Args.hasArg(options::OPT_nostdlibxx))
++      CmdArgs.push_back("-lunwind");
 +  }
 +
 +  CmdArgs.push_back("-lcygwin");
@@ -170,7 +171,7 @@
 +    llvm_unreachable("Unsupported target architecture.");
 +  }
 +
-+  if (!Args.getLastArgValue(options::OPT_fuse_ld_EQ, "link").equals_lower("lld")) {
++  if (!Args.getLastArgValue(options::OPT_fuse_ld_EQ, "link").equals_insensitive("lld")) {
 +    if (TC.getArch() == llvm::Triple::x86) {
 +      CmdArgs.push_back("--wrap");
 +      CmdArgs.push_back("_Znwj");
@@ -200,10 +201,13 @@
 +    CmdArgs.push_back("_ZdaPvKSt9nothrow_t");
 +  }
 +
-+  if (Args.hasArg(options::OPT_mwindows)) {
++  Arg *SubsysArg =
++      Args.getLastArg(options::OPT_mwindows, options::OPT_mconsole);
++  if (SubsysArg && SubsysArg->getOption().matches(options::OPT_mwindows)) {
 +    CmdArgs.push_back("--subsystem");
 +    CmdArgs.push_back("windows");
-+  } else if (Args.hasArg(options::OPT_mconsole)) {
++  } else if (SubsysArg &&
++             SubsysArg->getOption().matches(options::OPT_mconsole)) {
 +    CmdArgs.push_back("--subsystem");
 +    CmdArgs.push_back("console");
 +  }
@@ -348,6 +352,7 @@
 +      continue;
 +    if (CandidateVersion <= Version)
 +      continue;
++    Version = CandidateVersion;
 +    Ver = std::string(VersionText);
 +    GccLibDir = LI->path();
 +  }

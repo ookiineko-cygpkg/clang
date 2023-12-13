@@ -5,7 +5,7 @@ inherit cmake python3
 BUILD_REQUIRES=" cmake llvm libllvm-devel python39-devel"
 
 NAME="clang"
-VERSION="12.0.1"
+VERSION="13.0.1"
 RELEASE="1"
 CATEGORY="Devel"
 SUMMARY="C/C++ compiler frontend based on LLVM"
@@ -21,6 +21,7 @@ SRC_URI="
 "
 SRC_DIR="${P}.src"
 PATCH_URI="
+  https://src.fedoraproject.org/rpms/${PN}/raw/f35/f/0001-PATCH-${PN}-Fix-scan-build-py-executable-lookup-path.patch
   3.9.1-lib-soversion.patch
   7.0.1-linux-includes.patch
   7.0.1-mingw-sjlj.patch
@@ -32,12 +33,11 @@ PATCH_URI="
   7.0.1-objc-seh.patch
   9.0.1-cygwin-oslibname.patch
   12.0.1-cygming-disable-fpic-errs.patch
-  12.0.1-cygming-emutls-dso-local.patch
   12.0.1-emutls-vs-autoimport.patch
 "
 RESTRICT="debuginfo"
 
-PKG_NAMES="clang libclang12 clang-analyzer git-clang-format libclang-devel"
+PKG_NAMES="clang libclang13 clang-analyzer git-clang-format libclang-devel"
 clang_REQUIRES="binutils compiler-rt cygwin-devel gcc-core gcc-g++ libc++-devel libunwind-devel windows-default-manifest"
 clang_CONTENTS="
   --exclude=html
@@ -51,6 +51,7 @@ clang_CONTENTS="
   usr/bin/clang-offload-wrapper.exe
   usr/bin/clang-refactor.exe
   usr/bin/clang-rename.exe
+  usr/bin/clang-repl.exe
   usr/bin/diagtool.exe
   usr/bin/hmaptool
   usr/bin/c-index-test.exe
@@ -60,20 +61,25 @@ clang_CONTENTS="
 clang_analyzer_SUMMARY="C/C++/ObjC code analyzer"
 clang_analyzer_REQUIRES="clang"
 clang_analyzer_CONTENTS="
+  usr/bin/analyze-*
+  usr/bin/intercept-*
   usr/bin/*scan-*
+  usr/lib/lib*/
   usr/libexec/c*-analyzer
+  usr/libexec/analyze-*
+  usr/libexec/intercept-*
   usr/share/scan-*
   usr/share/man/man1/scan-build.*
 "
 git_clang_format_SUMMARY="C/C++ code formatting support for Git"
 git_clang_format_REQUIRES="clang git"
 git_clang_format_CONTENTS="usr/bin/git-clang-format"
-libclang12_CATEGORY="Libs"
-libclang12_SUMMARY="C/C++/ObjC compiler libraries (runtime)"
-libclang12_CONTENTS="
-  usr/bin/clang-12.exe
-  usr/bin/clang++-12
-  usr/bin/cygclang*-12.dll
+libclang13_CATEGORY="Libs"
+libclang13_SUMMARY="C/C++/ObjC compiler libraries (runtime)"
+libclang13_CONTENTS="
+  usr/bin/clang-13.exe
+  usr/bin/clang++-13
+  usr/bin/cygclang*-13.dll
   usr/lib/clang/${PV}/
 "
 libclang_devel_CATEGORY="Libs"
@@ -108,6 +114,7 @@ src_compile() {
 	-DLLVM_INCLUDE_TESTS=OFF \
 	-DCLANG_INCLUDE_EXAMPLES=OFF \
 	-DCLANG_INCLUDE_DOCS=OFF \
+	-DLLVM_ENABLE_NEW_PASS_MANAGER=ON \
 	-DGCC_INSTALL_PREFIX=/usr \
 	-DLINK_POLLY_INTO_TOOLS=ON -DWITH_POLLY=ON
 
@@ -133,5 +140,6 @@ src_install() {
     popd
 
     python3_optimize /usr/share/scan-{build,view}
+    python3_optimize /usr/lib/lib{ear,scanbuild}
 
 }
