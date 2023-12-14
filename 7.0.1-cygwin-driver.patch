@@ -48,7 +48,7 @@
 
 --- origsrc/clang-9.0.1.src/lib/Driver/ToolChains/Cygwin.cpp
 +++ src/clang-9.0.1.src/lib/Driver/ToolChains/Cygwin.cpp
-@@ -0,0 +1,525 @@
+@@ -0,0 +1,528 @@
 +//===--- Cygwin.cpp - CygwinToolChain Implementation ------------------------===//
 +//
 +//                     The LLVM Compiler Infrastructure
@@ -141,7 +141,7 @@
 +                                        const char *LinkingOutput) const {
 +  const ToolChain &TC = getToolChain();
 +  const Driver &D = TC.getDriver();
-+  // const SanitizerArgs &Sanitize = TC.getSanitizerArgs();
++  // const SanitizerArgs &Sanitize = TC.getSanitizerArgs(Args);
 +
 +  ArgStringList CmdArgs;
 +
@@ -235,6 +235,9 @@
 +      CmdArgs.push_back("--tsaware");
 +    }
 +  }
++
++  if (Args.hasArg(options::OPT_Z_Xlinker__no_demangle))
++    CmdArgs.push_back("--no-demangle");
 +
 +  CmdArgs.push_back("-o");
 +  const char *OutputFile = Output.getFilename();
@@ -470,11 +473,11 @@
 +  return getArch() == llvm::Triple::x86_64;
 +}
 +
-+bool toolchains::Cygwin::isPIEDefault() const { return false; }
-+
-+bool toolchains::Cygwin::isPICDefaultForced() const {
-+  return getArch() == llvm::Triple::x86_64;
++bool toolchains::Cygwin::isPIEDefault(const llvm::opt::ArgList &Args) const {
++  return false;
 +}
++
++bool toolchains::Cygwin::isPICDefaultForced() const { return true; }
 +
 +llvm::ExceptionHandling
 +toolchains::Cygwin::GetExceptionModel(const ArgList &Args) const {
@@ -644,7 +647,7 @@
 +  bool IsIntegratedAssemblerDefault() const override;
 +  bool IsUnwindTablesDefault(const llvm::opt::ArgList &Args) const override;
 +  bool isPICDefault() const override;
-+  bool isPIEDefault() const override;
++  bool isPIEDefault(const llvm::opt::ArgList &Args) const override;
 +  bool isPICDefaultForced() const override;
 +
 +  llvm::ExceptionHandling GetExceptionModel(
@@ -691,8 +694,8 @@
 +} // end namespace clang
 +
 +#endif // LLVM_CLANG_LIB_DRIVER_TOOLCHAINS_CYGWIN_H
---- origsrc/clang-9.0.1.src/lib/Frontend/InitHeaderSearch.cpp
-+++ src/clang-9.0.1.src/lib/Frontend/InitHeaderSearch.cpp
+--- origsrc/clang-9.0.1.src/lib/Lex/InitHeaderSearch.cpp
++++ src/clang-9.0.1.src/lib/Lex/InitHeaderSearch.cpp
 @@ -226,9 +226,7 @@
      case llvm::Triple::Fuchsia:
        break;
