@@ -5,7 +5,7 @@ inherit cmake python3
 BUILD_REQUIRES=" cmake llvm libllvm-devel python39-devel"
 
 NAME="clang"
-VERSION="13.0.1"
+VERSION="14.0.5"
 RELEASE="1"
 CATEGORY="Devel"
 SUMMARY="C/C++ compiler frontend based on LLVM"
@@ -21,7 +21,9 @@ SRC_URI="
 "
 SRC_DIR="${P}.src"
 PATCH_URI="
-  https://src.fedoraproject.org/rpms/${PN}/raw/f35/f/0001-PATCH-${PN}-Fix-scan-build-py-executable-lookup-path.patch
+  https://src.fedoraproject.org/rpms/${PN}/raw/f36/f/0001-Work-around-gcc-miscompile.patch
+  https://src.fedoraproject.org/rpms/${PN}/raw/f36/f/0001-${PN}-Enforce-instantiation-of-constexpr-template-fu.patch
+  https://src.fedoraproject.org/rpms/${PN}/raw/f36/f/0010-PATCH-${PN}-Produce-DWARF4-by-default.patch
   3.9.1-lib-soversion.patch
   7.0.1-linux-includes.patch
   7.0.1-mingw-sjlj.patch
@@ -32,12 +34,15 @@ PATCH_URI="
   5.0.1-newlib-ftm.patch
   7.0.1-objc-seh.patch
   9.0.1-cygwin-oslibname.patch
-  12.0.1-cygming-disable-fpic-errs.patch
   12.0.1-emutls-vs-autoimport.patch
+  14.0.5-cygming-fix-emulated-tls.patch
+  14.0.5-libclang-soname.patch
+  14.0.5-cygwin-template-dllexport.patch
+  14.0.5-cygwin-vtable.patch
 "
 RESTRICT="debuginfo"
 
-PKG_NAMES="clang libclang13 clang-analyzer git-clang-format libclang-devel"
+PKG_NAMES="clang libclang14 clang-analyzer git-clang-format libclang-devel"
 clang_REQUIRES="binutils cygwin-devel gcc-core gcc-g++ windows-default-manifest"
 clang_CONTENTS="
   --exclude=html
@@ -49,6 +54,8 @@ clang_CONTENTS="
   usr/bin/clang-format.exe
   usr/bin/clang-offload-bundler.exe
   usr/bin/clang-offload-wrapper.exe
+  usr/bin/clang-linker-wrapper.exe
+  usr/bin/clang-nvlink-wrapper.exe
   usr/bin/clang-refactor.exe
   usr/bin/clang-rename.exe
   usr/bin/clang-repl.exe
@@ -74,12 +81,12 @@ clang_analyzer_CONTENTS="
 git_clang_format_SUMMARY="C/C++ code formatting support for Git"
 git_clang_format_REQUIRES="clang git"
 git_clang_format_CONTENTS="usr/bin/git-clang-format"
-libclang13_CATEGORY="Libs"
-libclang13_SUMMARY="C/C++/ObjC compiler libraries (runtime)"
-libclang13_CONTENTS="
-  usr/bin/clang-13.exe
-  usr/bin/clang++-13
-  usr/bin/cygclang*-13.dll
+libclang14_CATEGORY="Libs"
+libclang14_SUMMARY="C/C++/ObjC compiler libraries (runtime)"
+libclang14_CONTENTS="
+  usr/bin/clang-14.exe
+  usr/bin/clang++-14
+  usr/bin/cygclang*-14.dll
   usr/lib/clang/${PV}/
 "
 libclang_devel_CATEGORY="Libs"
