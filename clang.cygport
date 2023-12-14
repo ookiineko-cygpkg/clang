@@ -38,7 +38,7 @@ PATCH_URI="
 RESTRICT="debuginfo"
 
 PKG_NAMES="clang libclang13 clang-analyzer git-clang-format libclang-devel"
-clang_REQUIRES="binutils compiler-rt cygwin-devel gcc-core gcc-g++ libc++-devel libunwind-devel windows-default-manifest"
+clang_REQUIRES="binutils cygwin-devel gcc-core gcc-g++ windows-default-manifest"
 clang_CONTENTS="
   --exclude=html
   usr/bin/clang
