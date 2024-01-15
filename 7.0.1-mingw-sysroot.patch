@@ -14,9 +14,9 @@
      Base = std::string(llvm::sys::path::parent_path(TargetSubdir.get()));
    else if (llvm::ErrorOr<std::string> GPPName = findGcc(getTriple()))
 @@ -356,8 +354,12 @@ toolchains::MinGW::MinGW(const Driver &D
-   getFilePaths().push_back(GccLibDir);
    getFilePaths().push_back(
-       (Base + SubdirName + llvm::sys::path::get_separator() + "lib").str());
+       (Base + SubdirName + llvm::sys::path::get_separator() + "mingw/lib").str());
+ 
 -  getFilePaths().push_back(Base + "lib");
 -  // openSUSE
 +  if (getDriver().SysRoot.size())
@@ -30,8 +30,8 @@
    NativeLLVMSupport =
 @@ -478,7 +480,12 @@ void toolchains::MinGW::AddClangSystemIn
    addSystemInclude(DriverArgs, CC1Args,
-                    Base + SubdirName + llvm::sys::path::get_separator() +
-                        "include");
+                    Base + SubdirName + llvm::sys::path::get_separator() + "usr/include");
+ 
 -  addSystemInclude(DriverArgs, CC1Args, Base + "include");
 +  if (getDriver().SysRoot.size())
 +    addSystemInclude(DriverArgs, CC1Args, getDriver().SysRoot + "/mingw/include");

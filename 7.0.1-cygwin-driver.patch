@@ -48,7 +48,7 @@
 
 --- origsrc/clang-9.0.1.src/lib/Driver/ToolChains/Cygwin.cpp
 +++ src/clang-9.0.1.src/lib/Driver/ToolChains/Cygwin.cpp
-@@ -0,0 +1,528 @@
+@@ -0,0 +1,533 @@
 +//===--- Cygwin.cpp - CygwinToolChain Implementation ------------------------===//
 +//
 +//                     The LLVM Compiler Infrastructure
@@ -284,6 +284,11 @@
 +    CmdArgs.push_back(Args.MakeArgString("-L" + CRTPath));
 +
 +  AddLinkerInputs(TC, Inputs, Args, CmdArgs, JA);
++
++  if (C.getDriver().IsFlangMode()) {
++    addFortranRuntimeLibraryPath(TC, Args, CmdArgs);
++    addFortranRuntimeLibs(TC, CmdArgs);
++  }
 +
 +  // TODO: Add ASan stuff here
 +

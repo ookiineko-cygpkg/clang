@@ -5,7 +5,7 @@ inherit cmake python3
 BUILD_REQUIRES=" cmake llvm libllvm-devel python39-devel"
 
 NAME="clang"
-VERSION="14.0.5"
+VERSION="15.0.7"
 RELEASE="1"
 CATEGORY="Devel"
 SUMMARY="C/C++ compiler frontend based on LLVM"
@@ -18,12 +18,12 @@ library to parse C/C++ code."
 HOMEPAGE="http://clang.llvm.org/"
 SRC_URI="
   https://github.com/llvm/llvm-project/releases/download/llvmorg-${VERSION}/${P}.src.tar.xz
+  https://github.com/llvm/llvm-project/releases/download/llvmorg-${PV}/cmake-${PV}.src.tar.xz
 "
 SRC_DIR="${P}.src"
 PATCH_URI="
-  https://src.fedoraproject.org/rpms/${PN}/raw/f36/f/0001-Work-around-gcc-miscompile.patch
-  https://src.fedoraproject.org/rpms/${PN}/raw/f36/f/0001-${PN}-Enforce-instantiation-of-constexpr-template-fu.patch
-  https://src.fedoraproject.org/rpms/${PN}/raw/f36/f/0010-PATCH-${PN}-Produce-DWARF4-by-default.patch
+  https://src.fedoraproject.org/rpms/${PN}/raw/f37/f/0001-Mark-fopenmp-implicit-rpath-as-NoArgumentUnused.patch
+  https://src.fedoraproject.org/rpms/${PN}/raw/f37/f/0010-PATCH-${PN}-Produce-DWARF4-by-default.patch
   3.9.1-lib-soversion.patch
   7.0.1-linux-includes.patch
   7.0.1-mingw-sjlj.patch
@@ -35,14 +35,13 @@ PATCH_URI="
   7.0.1-objc-seh.patch
   9.0.1-cygwin-oslibname.patch
   12.0.1-emutls-vs-autoimport.patch
-  14.0.5-cygming-fix-emulated-tls.patch
-  14.0.5-libclang-soname.patch
   14.0.5-cygwin-template-dllexport.patch
   14.0.5-cygwin-vtable.patch
+  15.0.7-cygming-fix-emulated-tls.patch
 "
 RESTRICT="debuginfo"
 
-PKG_NAMES="clang libclang14 clang-analyzer git-clang-format libclang-devel"
+PKG_NAMES="clang libclang15 clang-analyzer git-clang-format libclang-devel"
 clang_REQUIRES="binutils cygwin-devel gcc-core gcc-g++ windows-default-manifest"
 clang_CONTENTS="
   --exclude=html
@@ -53,6 +52,7 @@ clang_CONTENTS="
   usr/bin/clang-extdef-mapping.exe
   usr/bin/clang-format.exe
   usr/bin/clang-offload-bundler.exe
+  usr/bin/clang-offload-packager.exe
   usr/bin/clang-offload-wrapper.exe
   usr/bin/clang-linker-wrapper.exe
   usr/bin/clang-nvlink-wrapper.exe
@@ -81,12 +81,12 @@ clang_analyzer_CONTENTS="
 git_clang_format_SUMMARY="C/C++ code formatting support for Git"
 git_clang_format_REQUIRES="clang git"
 git_clang_format_CONTENTS="usr/bin/git-clang-format"
-libclang14_CATEGORY="Libs"
-libclang14_SUMMARY="C/C++/ObjC compiler libraries (runtime)"
-libclang14_CONTENTS="
-  usr/bin/clang-14.exe
-  usr/bin/clang++-14
-  usr/bin/cygclang*-14.dll
+libclang15_CATEGORY="Libs"
+libclang15_SUMMARY="C/C++/ObjC compiler libraries (runtime)"
+libclang15_CONTENTS="
+  usr/bin/clang-15.exe
+  usr/bin/clang++-15
+  usr/bin/cygclang*-15.dll
   usr/lib/clang/${PV}/
 "
 libclang_devel_CATEGORY="Libs"
@@ -94,6 +94,7 @@ libclang_devel_SUMMARY="C/C++/ObjC compiler libraries (development)"
 libclang_devel_REQUIRES="libllvm-devel"
 libclang_devel_OBSOLETES="libclang-devel-static"
 libclang_devel_CONTENTS="
+  usr/bin/clang-tblgen.exe
   usr/include/clang*/
   usr/lib/cmake/clang/
   usr/lib/libclang*.dll.a
@@ -105,6 +106,11 @@ DISTCLEANFILES="lib/Driver/ToolChains/Cygwin.*"
 # the executables link against both public (exported in DLL) and
 # private (only in static libs) LLVM APIs
 LDFLAGS+=" -Wl,--allow-multiple-definition"
+
+CYGPORT_USE_UNSTABLE_API=1
+src_unpack_hook() {
+    mv ../cmake{-${PV}.src,}
+}
 
 src_compile() {
     # leave optimization to build system, fails to dlopen with -O2
@@ -119,9 +125,9 @@ src_compile() {
 	-DCLANG_ENABLE_STATIC_ANALYZER=ON \
 	-DCLANG_INCLUDE_TESTS=OFF \
 	-DLLVM_INCLUDE_TESTS=OFF \
+	-DLLVM_BUILD_UTILS=ON \
 	-DCLANG_INCLUDE_EXAMPLES=OFF \
 	-DCLANG_INCLUDE_DOCS=OFF \
-	-DLLVM_ENABLE_NEW_PASS_MANAGER=ON \
 	-DGCC_INSTALL_PREFIX=/usr \
 	-DLINK_POLLY_INTO_TOOLS=ON -DWITH_POLLY=ON
 
